@@ -1,0 +1,2 @@
+define("ace/snippets/smarty",["require","exports","module"],function(e,t,s){"use strict";t.snippetText="",t.scope="smarty"});(function(){window.require(["ace/snippets/smarty"],function(e){if(typeof module=="object"){module.exports=e}})})();
+//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/smarty.js.map

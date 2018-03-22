@@ -1,0 +1,2 @@
+define("ace/snippets/jssm",["require","exports","module"],function(e,s,i){"use strict";s.snippetText=undefined,s.scope=""});(function(){window.require(["ace/snippets/jssm"],function(e){if(typeof module=="object"){module.exports=e}})})();
+//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/jssm.js.map

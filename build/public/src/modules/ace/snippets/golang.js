@@ -1,0 +1,2 @@
+define("ace/snippets/golang",["require","exports","module"],function(e,o,n){"use strict";o.snippetText="",o.scope="golang"});(function(){window.require(["ace/snippets/golang"],function(e){if(typeof module=="object"){module.exports=e}})})();
+//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/golang.js.map

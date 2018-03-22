@@ -1,0 +1,2 @@
+define("ace/snippets/yaml",["require","exports","module"],function(e,t,i){"use strict";t.snippetText="",t.scope="yaml"});(function(){window.require(["ace/snippets/yaml"],function(e){if(typeof module=="object"){module.exports=e}})})();
+//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/yaml.js.map

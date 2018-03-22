@@ -1,0 +1,2 @@
+define("ace/snippets/gitignore",["require","exports","module"],function(e,i,t){"use strict";i.snippetText="",i.scope="gitignore"});(function(){window.require(["ace/snippets/gitignore"],function(e){if(typeof module=="object"){module.exports=e}})})();
+//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/gitignore.js.map

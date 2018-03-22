@@ -1,0 +1,2 @@
+define("ace/snippets/toml",["require","exports","module"],function(e,t,o){"use strict";t.snippetText="",t.scope="toml"});(function(){window.require(["ace/snippets/toml"],function(e){if(typeof module=="object"){module.exports=e}})})();
+//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/toml.js.map

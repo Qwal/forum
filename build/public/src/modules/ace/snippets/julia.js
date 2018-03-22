@@ -1,0 +1,2 @@
+define("ace/snippets/julia",["require","exports","module"],function(e,i,t){"use strict";i.snippetText="",i.scope="julia"});(function(){window.require(["ace/snippets/julia"],function(e){if(typeof module=="object"){module.exports=e}})})();
+//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/julia.js.map

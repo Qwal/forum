@@ -1,0 +1,13 @@
+{
+    "url": "http://localhost:4567",
+    "secret": "8203feed-ae79-4308-b021-fa782283f662",
+    "database": "redis",
+    "port": 4567,
+    "redis": {
+        "host": "koi.redistogo.com",
+        "port": "10189",
+        "password": "c7ed028c23ffdc791a4b1b0118c81591",
+        "database": "0"
+    },
+    "type": "literal"
+}

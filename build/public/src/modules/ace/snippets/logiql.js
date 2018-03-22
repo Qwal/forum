@@ -1,0 +1,2 @@
+define("ace/snippets/logiql",["require","exports","module"],function(e,i,o){"use strict";i.snippetText="",i.scope="logiql"});(function(){window.require(["ace/snippets/logiql"],function(e){if(typeof module=="object"){module.exports=e}})})();
+//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/logiql.js.map

@@ -1,0 +1,2 @@
+define("ace/snippets/less",["require","exports","module"],function(e,s,t){"use strict";s.snippetText="",s.scope="less"});(function(){window.require(["ace/snippets/less"],function(e){if(typeof module=="object"){module.exports=e}})})();
+//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/less.js.map

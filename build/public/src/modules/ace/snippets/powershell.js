@@ -1,0 +1,2 @@
+define("ace/snippets/powershell",["require","exports","module"],function(e,o,p){"use strict";o.snippetText="",o.scope="powershell"});(function(){window.require(["ace/snippets/powershell"],function(e){if(typeof module=="object"){module.exports=e}})})();
+//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/powershell.js.map

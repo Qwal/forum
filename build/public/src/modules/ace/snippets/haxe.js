@@ -1,0 +1,2 @@
+define("ace/snippets/haxe",["require","exports","module"],function(e,t,i){"use strict";t.snippetText="",t.scope="haxe"});(function(){window.require(["ace/snippets/haxe"],function(e){if(typeof module=="object"){module.exports=e}})})();
+//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/haxe.js.map

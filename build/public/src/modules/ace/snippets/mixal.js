@@ -1,0 +1,2 @@
+define("ace/snippets/mixal",["require","exports","module"],function(e,i,t){"use strict";i.snippetText="",i.scope="mixal"});(function(){window.require(["ace/snippets/mixal"],function(e){if(typeof module=="object"){module.exports=e}})})();
+//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/mixal.js.map

@@ -1,0 +1,2 @@
+define("ace/snippets/scheme",["require","exports","module"],function(e,s,t){"use strict";s.snippetText="",s.scope="scheme"});(function(){window.require(["ace/snippets/scheme"],function(e){if(typeof module=="object"){module.exports=e}})})();
+//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/scheme.js.map

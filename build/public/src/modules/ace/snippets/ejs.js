@@ -1,0 +1,2 @@
+define("ace/snippets/ejs",["require","exports","module"],function(e,s,t){"use strict";s.snippetText="",s.scope="ejs"});(function(){window.require(["ace/snippets/ejs"],function(e){if(typeof module=="object"){module.exports=e}})})();
+//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/ejs.js.map

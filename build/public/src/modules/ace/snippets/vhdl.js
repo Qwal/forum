@@ -1,0 +1,2 @@
+define("ace/snippets/vhdl",["require","exports","module"],function(e,t,i){"use strict";t.snippetText="",t.scope="vhdl"});(function(){window.require(["ace/snippets/vhdl"],function(e){if(typeof module=="object"){module.exports=e}})})();
+//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/vhdl.js.map
