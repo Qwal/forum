@@ -249,7 +249,7 @@ function setupAutoLocale(app, callback) {
 
 function listen(callback) {
 	callback = callback || function () { };
-	var port = nconf.get('port');
+	var port = process.env.PORT || nconf.get('port');
 	var isSocket = isNaN(port);
 	var socketPath = isSocket ? nconf.get('port') : '';
 
