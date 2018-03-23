@@ -1,1 +1,1 @@
-web: node app.js
+web: node loader.js --no-daemon
