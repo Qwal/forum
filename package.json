@@ -14,7 +14,8 @@
     "lint": "eslint --cache ./nodebb .",
     "pretest": "npm run lint",
     "test": "nyc --reporter=html --reporter=text-summary mocha",
-    "coveralls": "nyc report --reporter=text-lcov | coveralls && rm -r coverage"
+    "coveralls": "nyc report --reporter=text-lcov | coveralls && rm -r coverage",
+    "postinstall": "./nodebb build"
   },
   "dependencies": {
     "ace-builds": "^1.2.9",
