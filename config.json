@@ -1,5 +1,5 @@
 {
-    "url": "https://mighty-tor-34356.herokuapp.com",
+    "url": "http://www.zacisznejagodno.wroclaw.pl",
     "secret": "8203feed-ae79-4308-b021-fa782283f662",
     "database": "redis",
     "port": 4567,
