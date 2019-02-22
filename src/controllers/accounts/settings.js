@@ -1,7 +1,10 @@
 'use strict';
 
 var async = require('async');
+var nconf = require('nconf');
+var winston = require('winston');
 var _ = require('lodash');
+var jwt = require('jsonwebtoken');
 
 var user = require('../../user');
 var languages = require('../../languages');
@@ -9,6 +12,7 @@ var meta = require('../../meta');
 var plugins = require('../../plugins');
 var privileges = require('../../privileges');
 var categories = require('../../categories');
+var notifications = require('../../notifications');
 var db = require('../../database');
 var helpers = require('../helpers');
 var accountHelpers = require('./helpers');
@@ -101,7 +105,7 @@ settingsController.get = function (req, res, callback) {
 		function (results) {
 			userData.homePageRoutes = results.routes;
 			userData.notificationSettings = results.notificationSettings;
-			userData.disableEmailSubscriptions = parseInt(meta.config.disableEmailSubscriptions, 10) === 1;
+			userData.disableEmailSubscriptions = meta.config.disableEmailSubscriptions;
 
 			userData.dailyDigestFreqOptions = [
 				{ value: 'off', name: '[[user:digest_off]]', selected: userData.settings.dailyDigestFreq === 'off' },
@@ -111,8 +115,7 @@ settingsController.get = function (req, res, callback) {
 			];
 
 			userData.bootswatchSkinOptions = [
-				{ name: 'No skin', value: 'noskin' },
-				{ name: 'Default', value: 'default' },
+				{ name: 'Default', value: '' },
 				{ name: 'Cerulean', value: 'cerulean' },
 				{ name: 'Cosmo', value: 'cosmo'	},
 				{ name: 'Cyborg', value: 'cyborg' },
@@ -147,7 +150,9 @@ settingsController.get = function (req, res, callback) {
 
 			var notifFreqOptions = [
 				'all',
+				'first',
 				'everyTen',
+				'threshold',
 				'logarithmic',
 				'disabled',
 			];
@@ -155,21 +160,23 @@ settingsController.get = function (req, res, callback) {
 			userData.upvoteNotifFreq = notifFreqOptions.map(function (name) {
 				return {
 					name: name,
-					selected: name === userData.notifFreqOptions,
+					selected: name === userData.settings.upvoteNotifFreq,
 				};
 			});
 
-			userData.disableCustomUserSkins = parseInt(meta.config.disableCustomUserSkins, 10) === 1;
+			userData.categoryWatchState = { [userData.settings.categoryWatchState]: true };
 
-			userData.allowUserHomePage = parseInt(meta.config.allowUserHomePage, 10) === 1;
+			userData.disableCustomUserSkins = meta.config.disableCustomUserSkins;
 
-			userData.hideFullname = parseInt(meta.config.hideFullname, 10) === 1;
-			userData.hideEmail = parseInt(meta.config.hideEmail, 10) === 1;
+			userData.allowUserHomePage = meta.config.allowUserHomePage;
+
+			userData.hideFullname = meta.config.hideFullname;
+			userData.hideEmail = meta.config.hideEmail;
 
 			userData.inTopicSearchAvailable = plugins.hasListeners('filter:topic.search');
 
-			userData.maxTopicsPerPage = parseInt(meta.config.maxTopicsPerPage, 10) || 20;
-			userData.maxPostsPerPage = parseInt(meta.config.maxPostsPerPage, 10) || 20;
+			userData.maxTopicsPerPage = meta.config.maxTopicsPerPage;
+			userData.maxPostsPerPage = meta.config.maxPostsPerPage;
 
 			userData.title = '[[pages:account/settings]]';
 			userData.breadcrumbs = helpers.buildBreadcrumbs([{ text: userData.username, url: '/user/' + userData.userslug }, { text: '[[user:settings]]' }]);
@@ -179,16 +186,53 @@ settingsController.get = function (req, res, callback) {
 	], callback);
 };
 
-function getNotificationSettings(userData, callback) {
-	var types = [
-		'notificationType_upvote',
-		'notificationType_new-topic',
-		'notificationType_new-reply',
-		'notificationType_follow',
-		'notificationType_new-chat',
-		'notificationType_group-invite',
-	];
+settingsController.unsubscribe = function (req, res) {
+	if (!req.params.token) {
+		return res.sendStatus(404);
+	}
 
+	jwt.verify(req.params.token, nconf.get('secret'), function (err, payload) {
+		if (err) {
+			return res.sendStatus(403);
+		}
+
+		switch (payload.template) {
+		case 'digest':
+			async.parallel([
+				async.apply(user.setSetting, payload.uid, 'dailyDigestFreq', 'off'),
+				async.apply(user.updateDigestSetting, payload.uid, 'off'),
+			], function (err) {
+				if (err) {
+					winston.error('[settings/unsubscribe] One-click unsubscribe failed with error: ' + err.message);
+					return res.sendStatus(500);
+				}
+
+				return res.sendStatus(200);
+			});
+			break;
+		case 'notification':
+			async.waterfall([
+				async.apply(db.getObjectField, 'user:' + payload.uid + ':settings', 'notificationType_' + payload.type),
+				(current, next) => {
+					user.setSetting(payload.uid, 'notificationType_' + payload.type, (current === 'notificationemail' ? 'notification' : 'none'), next);
+				},
+			], function (err) {
+				if (err) {
+					winston.error('[settings/unsubscribe] One-click unsubscribe failed with error: ' + err.message);
+					return res.sendStatus(500);
+				}
+
+				return res.sendStatus(200);
+			});
+			break;
+		default:
+			res.sendStatus(404);
+			break;
+		}
+	});
+};
+
+function getNotificationSettings(userData, callback) {
 	var privilegedTypes = [];
 
 	async.waterfall([
@@ -206,8 +250,7 @@ function getNotificationSettings(userData, callback) {
 				privilegedTypes.push('notificationType_new-user-flag');
 			}
 			plugins.fireHook('filter:user.notificationTypes', {
-				userData: userData,
-				types: types,
+				types: notifications.baseTypes.slice(),
 				privilegedTypes: privilegedTypes,
 			}, next);
 		},
@@ -224,6 +267,11 @@ function getNotificationSettings(userData, callback) {
 					notificationemail: setting === 'notificationemail',
 				};
 			}
+
+			if (meta.config.disableChat) {
+				results.types = results.types.filter(type => type !== 'notificationType_new-chat');
+			}
+
 			var notificationSettings = results.types.map(modifyType).concat(results.privilegedTypes.map(modifyType));
 			next(null, notificationSettings);
 		},

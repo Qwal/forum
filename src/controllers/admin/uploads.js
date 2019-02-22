@@ -7,6 +7,7 @@ var mime = require('mime');
 var fs = require('fs');
 
 var meta = require('../../meta');
+var posts = require('../../posts');
 var file = require('../../file');
 var image = require('../../image');
 var plugins = require('../../plugins');
@@ -40,17 +41,37 @@ uploadsController.get = function (req, res, next) {
 
 			filesToData(currentFolder, files, next);
 		},
-		function (files) {
+		function (files, next) {
+			// Float directories to the top
 			files.sort(function (a, b) {
 				if (a.isDirectory && !b.isDirectory) {
 					return -1;
 				} else if (!a.isDirectory && b.isDirectory) {
 					return 1;
+				} else if (!a.isDirectory && !b.isDirectory) {
+					return a.mtime < b.mtime ? -1 : 1;
 				}
+
 				return 0;
 			});
+
+			// Add post usage info if in /files
+			if (req.query.dir === '/files') {
+				posts.uploads.getUsage(files, function (err, usage) {
+					files.forEach(function (file, idx) {
+						file.inPids = usage[idx].map(pid => parseInt(pid, 10));
+					});
+
+					next(err, files);
+				});
+			} else {
+				setImmediate(next, null, files);
+			}
+		},
+		function (files) {
 			res.render('admin/manage/uploads', {
 				currentFolder: currentFolder.replace(nconf.get('upload_path'), ''),
+				showPids: files.length && files[0].hasOwnProperty('inPids'),
 				files: files,
 				breadcrumbs: buildBreadcrumbs(currentFolder),
 				pagination: pagination.create(page, Math.ceil(itemCount / itemsPerPage), req.query),
@@ -67,7 +88,9 @@ function buildBreadcrumbs(currentFolder) {
 		var dir = path.join(currentPath, part);
 		crumbs.push({
 			text: part || 'Uploads',
-			url: part ? '/admin/manage/uploads?dir=' + dir : '/admin/manage/uploads',
+			url: part ?
+				(nconf.get('relative_path') + '/admin/manage/uploads?dir=' + dir) :
+				nconf.get('relative_path') + '/admin/manage/uploads',
 		});
 		currentPath = dir;
 	});
@@ -101,6 +124,7 @@ function filesToData(currentDir, files, callback) {
 					sizeHumanReadable: (stat.size / 1024).toFixed(1) + 'KiB',
 					isDirectory: stat.isDirectory(),
 					isFile: stat.isFile(),
+					mtime: stat.mtimeMs,
 				});
 			},
 		], next);
@@ -152,16 +176,13 @@ uploadsController.uploadTouchIcon = function (req, res, next) {
 			}
 
 			// Resize the image into squares for use as touch icons at various DPIs
-			async.each(sizes, function (size, next) {
-				async.series([
-					async.apply(file.saveFileToLocal, 'touchicon-' + size + '.png', 'system', uploadedFile.path),
-					async.apply(image.resizeImage, {
-						path: path.join(nconf.get('upload_path'), 'system', 'touchicon-' + size + '.png'),
-						extension: 'png',
-						width: size,
-						height: size,
-					}),
-				], next);
+			async.eachSeries(sizes, function (size, next) {
+				image.resizeImage({
+					path: uploadedFile.path,
+					target: path.join(nconf.get('upload_path'), 'system', 'touchicon-' + size + '.png'),
+					width: size,
+					height: size,
+				}, next);
 			}, function (err) {
 				file.delete(uploadedFile.path);
 
@@ -240,7 +261,7 @@ function upload(name, req, res, next) {
 }
 
 function validateUpload(req, res, next, uploadedFile, allowedTypes) {
-	if (allowedTypes.indexOf(uploadedFile.type) === -1) {
+	if (!allowedTypes.includes(uploadedFile.type)) {
 		file.delete(uploadedFile.path);
 		res.json({ error: '[[error:invalid-image-type, ' + allowedTypes.join('&#44; ') + ']]' });
 		return false;
@@ -266,12 +287,23 @@ function uploadImage(filename, folder, uploadedFile, req, res, next) {
 					async.apply(image.resizeImage, {
 						path: uploadedFile.path,
 						target: uploadPath,
-						extension: 'png',
 						height: 50,
 					}),
 					async.apply(meta.configs.set, 'brand:emailLogo', path.join(nconf.get('upload_url'), 'system/site-logo-x50.png')),
 				], function (err) {
 					next(err, imageData);
+				});
+			} else if (path.basename(filename, path.extname(filename)) === 'og:image' && folder === 'system') {
+				image.size(imageData.path, function (err, size) {
+					if (err) {
+						next(err);
+					}
+					meta.configs.setMultiple({
+						'og:image:width': size.width,
+						'og:image:height': size.height,
+					}, function (err) {
+						next(err, imageData);
+					});
 				});
 			} else {
 				setImmediate(next, null, imageData);
@@ -285,4 +317,3 @@ function uploadImage(filename, folder, uploadedFile, req, res, next) {
 		res.json([{ name: uploadedFile.name, url: image.url.startsWith('http') ? image.url : nconf.get('relative_path') + image.url }]);
 	});
 }
-

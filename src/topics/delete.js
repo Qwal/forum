@@ -74,9 +74,7 @@ module.exports = function (Topics) {
 						db.sortedSetAdd('topics:views', topicData.viewcount, tid, next);
 					},
 					function (next) {
-						var upvotes = parseInt(topicData.upvotes, 10) || 0;
-						var downvotes = parseInt(topicData.downvotes, 10) || 0;
-						db.sortedSetAdd('topics:votes', upvotes - downvotes, tid, next);
+						db.sortedSetAdd('topics:votes', parseInt(topicData.votes, 10) || 0, tid, next);
 					},
 					function (next) {
 						async.waterfall([
@@ -87,9 +85,7 @@ module.exports = function (Topics) {
 								posts.getPostsFields(pids, ['pid', 'timestamp', 'deleted'], next);
 							},
 							function (postData, next) {
-								postData = postData.filter(function (post) {
-									return post && parseInt(post.deleted, 10) !== 1;
-								});
+								postData = postData.filter(post => post && !post.deleted);
 								var pidsToAdd = [];
 								var scores = [];
 								postData.forEach(function (post) {
@@ -116,7 +112,7 @@ module.exports = function (Topics) {
 			function (_mainPid, next) {
 				mainPid = _mainPid;
 				batch.processSortedSet('tid:' + tid + ':posts', function (pids, next) {
-					async.eachLimit(pids, 10, function (pid, next) {
+					async.eachSeries(pids, function (pid, next) {
 						posts.purge(pid, uid, next);
 					}, next);
 				}, { alwaysStartAt: 0 }, next);
@@ -131,8 +127,20 @@ module.exports = function (Topics) {
 	};
 
 	Topics.purge = function (tid, uid, callback) {
+		var deletedTopic;
 		async.waterfall([
 			function (next) {
+				async.parallel({
+					topic: async.apply(Topics.getTopicData, tid),
+					tags: async.apply(Topics.getTopicTags, tid),
+				}, next);
+			},
+			function (results, next) {
+				if (!results.topic) {
+					return callback();
+				}
+				deletedTopic = results.topic;
+				deletedTopic.tags = results.tags;
 				deleteFromFollowersIgnorers(tid, next);
 			},
 			function (next) {
@@ -170,10 +178,7 @@ module.exports = function (Topics) {
 				});
 			},
 			function (next) {
-				Topics.getTopicData(tid, next);
-			},
-			function (topicData, next) {
-				plugins.fireHook('action:topic.purge', { topic: topicData, uid: uid });
+				plugins.fireHook('action:topic.purge', { topic: deletedTopic, uid: uid });
 				db.delete('topic:' + tid, next);
 			},
 		], callback);
@@ -240,8 +245,6 @@ module.exports = function (Topics) {
 						Topics.getTopicFields(tid, ['cid', 'postcount'], next);
 					},
 					function (topicData, next) {
-						topicData.postcount = parseInt(topicData.postcount, 10);
-						topicData.postcount = topicData.postcount || 0;
 						var postCountChange = incr * topicData.postcount;
 
 						async.parallel([

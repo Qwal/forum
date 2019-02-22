@@ -51,6 +51,8 @@ Flags.init = function (callback) {
 			cid: function (sets, orSets, key) {
 				prepareSets(sets, orSets, 'flags:byCid:', key);
 			},
+			page: function () {	/* noop */ },
+			perPage: function () {	/* noop */ },
 			quick: function (sets, orSets, key, uid) {
 				switch (key) {
 				case 'mine':
@@ -88,7 +90,7 @@ Flags.get = function (flagId, callback) {
 			// Second stage
 			async.parallel({
 				userObj: async.apply(user.getUserFields, data.base.uid, ['username', 'userslug', 'picture', 'reputation']),
-				targetObj: async.apply(Flags.getTarget, data.base.type, data.base.targetId, data.base.uid),
+				targetObj: async.apply(Flags.getTarget, data.base.type, data.base.targetId, 0),
 			}, function (err, payload) {
 				// Final object return construction
 				next(err, Object.assign(data.base, {
@@ -121,14 +123,16 @@ Flags.list = function (filters, uid, callback) {
 	var sets = [];
 	var orSets = [];
 
-	if (Object.keys(filters).length > 0) {
-		for (var type in filters) {
-			if (filters.hasOwnProperty(type)) {
-				if (Flags._filters.hasOwnProperty(type)) {
-					Flags._filters[type](sets, orSets, filters[type], uid);
-				} else {
-					winston.warn('[flags/list] No flag filter type found: ' + type);
-				}
+	// Default filter
+	filters.page = filters.hasOwnProperty('page') ? Math.abs(parseInt(filters.page, 10) || 1) : 1;
+	filters.perPage = filters.hasOwnProperty('perPage') ? Math.abs(parseInt(filters.perPage, 10) || 20) : 20;
+
+	for (var type in filters) {
+		if (filters.hasOwnProperty(type)) {
+			if (Flags._filters.hasOwnProperty(type)) {
+				Flags._filters[type](sets, orSets, filters[type], uid);
+			} else {
+				winston.warn('[flags/list] No flag filter type found: ' + type);
 			}
 		}
 	}
@@ -165,6 +169,11 @@ Flags.list = function (filters, uid, callback) {
 			}
 		},
 		function (flagIds, next) {
+			// Create subset for parsing based on page number (n=20)
+			const flagsPerPage = Math.abs(parseInt(filters.perPage, 10) || 1);
+			const pageCount = Math.ceil(flagIds.length / flagsPerPage);
+			flagIds = flagIds.slice((filters.page - 1) * flagsPerPage, filters.page * flagsPerPage);
+
 			async.map(flagIds, function (flagId, next) {
 				async.waterfall([
 					async.apply(db.getObject, 'flag:' + flagId),
@@ -206,13 +215,20 @@ Flags.list = function (filters, uid, callback) {
 						datetimeISO: utils.toISOString(flagObj.datetime),
 					}));
 				});
-			}, next);
+			}, function (err, flags) {
+				next(err, flags, pageCount);
+			});
 		},
-		function (flags, next) {
+		function (flags, pageCount, next) {
 			plugins.fireHook('filter:flags.list', {
 				flags: flags,
+				page: filters.page,
 			}, function (err, data) {
-				next(err, data.flags);
+				next(err, {
+					flags: data.flags,
+					page: data.page,
+					pageCount: pageCount,
+				});
 			});
 		},
 	], callback);
@@ -220,7 +236,6 @@ Flags.list = function (filters, uid, callback) {
 
 Flags.validate = function (payload, callback) {
 	async.parallel({
-		targetExists: async.apply(Flags.targetExists, payload.type, payload.id),
 		target: async.apply(Flags.getTarget, payload.type, payload.id, payload.uid),
 		reporter: async.apply(user.getUserData, payload.uid),
 	}, function (err, data) {
@@ -228,9 +243,13 @@ Flags.validate = function (payload, callback) {
 			return callback(err);
 		}
 
-		if (data.target.deleted) {
+		if (!data.target) {
+			return callback(new Error('[[error:invalid-data]]'));
+		} else if (data.target.deleted) {
 			return callback(new Error('[[error:post-deleted]]'));
-		} else if (parseInt(data.reporter.banned, 10)) {
+		} else if (!data.reporter || !data.reporter.userslug) {
+			return callback(new Error('[[error:no-user]]'));
+		} else if (data.reporter.banned) {
 			return callback(new Error('[[error:user-banned]]'));
 		}
 
@@ -241,9 +260,8 @@ Flags.validate = function (payload, callback) {
 					return callback(err);
 				}
 
-				var minimumReputation = utils.isNumber(meta.config['min:rep:flag']) ? parseInt(meta.config['min:rep:flag'], 10) : 0;
 				// Check if reporter meets rep threshold (or can edit the target post, in which case threshold does not apply)
-				if (!editable.flag && parseInt(data.reporter.reputation, 10) < minimumReputation) {
+				if (!editable.flag && data.reporter.reputation < meta.config['min:rep:flag']) {
 					return callback(new Error('[[error:not-enough-reputation-to-flag]]'));
 				}
 
@@ -257,9 +275,8 @@ Flags.validate = function (payload, callback) {
 					return callback(err);
 				}
 
-				var minimumReputation = utils.isNumber(meta.config['min:rep:flag']) ? parseInt(meta.config['min:rep:flag'], 10) : 0;
 				// Check if reporter meets rep threshold (or can edit the target user, in which case threshold does not apply)
-				if (!editable && parseInt(data.reporter.reputation, 10) < minimumReputation) {
+				if (!editable && data.reporter.reputation < meta.config['min:rep:flag']) {
 					return callback(new Error('[[error:not-enough-reputation-to-flag]]'));
 				}
 
@@ -304,6 +321,7 @@ Flags.getNotes = function (flagId, callback) {
 
 				next(null, notes.map(function (note, idx) {
 					note.user = users[idx];
+					note.content = validator.escape(note.content);
 					return note;
 				}));
 			});
@@ -407,13 +425,18 @@ Flags.getTarget = function (type, id, uid, callback) {
 				switch (type) {
 				case 'post':
 					async.waterfall([
-						async.apply(posts.getPostsByPids, [id], uid),
-						function (posts, next) {
-							topics.addPostData(posts, uid, next);
+						async.apply(posts.getPostsData, [id]),
+						function (postData, next) {
+							async.map(postData, posts.parsePost, next);
 						},
-					], function (err, posts) {
-						next(err, posts[0]);
-					});
+						function (postData, next) {
+							postData = postData.filter(Boolean);
+							topics.addPostData(postData, uid, next);
+						},
+						function (postData, next) {
+							next(null, postData[0]);
+						},
+					], callback);
 					break;
 
 				case 'user':
@@ -480,7 +503,7 @@ Flags.update = function (flagId, uid, changeset, callback) {
 	var tasks = [];
 	var now = changeset.datetime || Date.now();
 	var notifyAssignee = function (assigneeId, next) {
-		if (assigneeId === '') {
+		if (assigneeId === '' || parseInt(uid, 10) === parseInt(assigneeId, 10)) {
 			// Do nothing
 			return next();
 		}
@@ -537,7 +560,6 @@ Flags.update = function (flagId, uid, changeset, callback) {
 			tasks.push(async.apply(Flags.appendHistory, flagId, uid, changeset));
 
 			// Fire plugin hook
-			tasks.push(async.apply(plugins.fireHook, 'action:flag.update', { flagId: flagId, changeset: changeset, uid: uid }));	// delete @ NodeBB v1.6.0
 			tasks.push(async.apply(plugins.fireHook, 'action:flags.update', { flagId: flagId, changeset: changeset, uid: uid }));
 
 			async.parallel(tasks, function (err) {
@@ -673,7 +695,7 @@ Flags.notify = function (flagObj, uid, callback) {
 				bodyShort: '[[notifications:user_flagged_post_in, ' + flagObj.reporter.username + ', ' + titleEscaped + ']]',
 				bodyLong: flagObj.description,
 				pid: flagObj.targetId,
-				path: '/post/' + flagObj.targetId,
+				path: '/flags/' + flagObj.flagId,
 				nid: 'flag:post:' + flagObj.targetId + ':uid:' + uid,
 				from: uid,
 				mergeId: 'notifications:user_flagged_post_in|' + flagObj.targetId,
@@ -683,13 +705,16 @@ Flags.notify = function (flagObj, uid, callback) {
 					return callback(err);
 				}
 
-				plugins.fireHook('action:flag.create', {
-					flag: flagObj,
-				});	// delete @ NodeBB v1.6.0
 				plugins.fireHook('action:flags.create', {
 					flag: flagObj,
 				});
-				notifications.push(notification, results.admins.concat(results.moderators).concat(results.globalMods), callback);
+
+				var uids = results.admins.concat(results.moderators).concat(results.globalMods);
+				uids = uids.filter(function (_uid) {
+					return parseInt(_uid, 10) !== parseInt(uid, 10);
+				});
+
+				notifications.push(notification, uids, callback);
 			});
 		});
 		break;
@@ -707,7 +732,7 @@ Flags.notify = function (flagObj, uid, callback) {
 				type: 'new-user-flag',
 				bodyShort: '[[notifications:user_flagged_user, ' + flagObj.reporter.username + ', ' + flagObj.target.username + ']]',
 				bodyLong: flagObj.description,
-				path: '/uid/' + flagObj.targetId,
+				path: '/flags/' + flagObj.flagId,
 				nid: 'flag:user:' + flagObj.targetId + ':uid:' + uid,
 				from: uid,
 				mergeId: 'notifications:user_flagged_user|' + flagObj.targetId,

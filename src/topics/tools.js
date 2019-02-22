@@ -42,9 +42,9 @@ module.exports = function (Topics) {
 			function (_topicData, next) {
 				topicData = _topicData;
 
-				if (parseInt(topicData.deleted, 10) === 1 && isDelete) {
+				if (topicData.deleted && isDelete) {
 					return callback(new Error('[[error:topic-already-deleted]]'));
-				} else if (parseInt(topicData.deleted, 10) !== 1 && !isDelete) {
+				} else if (!topicData.deleted && !isDelete) {
 					return callback(new Error('[[error:topic-already-restored]]'));
 				}
 
@@ -182,12 +182,11 @@ module.exports = function (Topics) {
 								async.apply(db.sortedSetRemove, 'cid:' + topicData.cid + ':tids:votes', tid),
 							], next);
 						} else {
-							var votes = (parseInt(topicData.upvotes, 10) || 0) - (parseInt(topicData.downvotes, 10) || 0);
 							async.parallel([
 								async.apply(db.sortedSetRemove, 'cid:' + topicData.cid + ':tids:pinned', tid),
 								async.apply(db.sortedSetAdd, 'cid:' + topicData.cid + ':tids', topicData.lastposttime, tid),
 								async.apply(db.sortedSetAdd, 'cid:' + topicData.cid + ':tids:posts', topicData.postcount, tid),
-								async.apply(db.sortedSetAdd, 'cid:' + topicData.cid + ':tids:votes', votes, tid),
+								async.apply(db.sortedSetAdd, 'cid:' + topicData.cid + ':tids:votes', parseInt(topicData.votes, 10) || 0, tid),
 							], next);
 						}
 					},
@@ -213,9 +212,7 @@ module.exports = function (Topics) {
 				Topics.getTopicsFields(tids, ['cid'], next);
 			},
 			function (topicData, next) {
-				var uniqueCids = _.uniq(topicData.map(function (topicData) {
-					return topicData && parseInt(topicData.cid, 10);
-				}));
+				var uniqueCids = _.uniq(topicData.map(topicData => topicData && topicData.cid));
 
 				if (uniqueCids.length > 1 || !uniqueCids.length || !uniqueCids[0]) {
 					return next(new Error('[[error:invalid-data]]'));
@@ -249,7 +246,7 @@ module.exports = function (Topics) {
 	topicTools.move = function (tid, data, callback) {
 		var topic;
 		var oldCid;
-		var cid = data.cid;
+		var cid = parseInt(data.cid, 10);
 
 		async.waterfall([
 			function (next) {
@@ -260,7 +257,7 @@ module.exports = function (Topics) {
 				if (!topic) {
 					return next(new Error('[[error:no-topic]]'));
 				}
-				if (parseInt(cid, 10) === parseInt(topic.cid, 10)) {
+				if (cid === topic.cid) {
 					return next(new Error('[[error:cant-move-topic-to-same-category]]'));
 				}
 				db.sortedSetsRemove([
@@ -280,7 +277,7 @@ module.exports = function (Topics) {
 				db.sortedSetAdd('cid:' + cid + ':uid:' + topic.uid + ':tids', topic.timestamp, tid, next);
 			},
 			function (next) {
-				if (parseInt(topic.pinned, 10)) {
+				if (topic.pinned) {
 					db.sortedSetAdd('cid:' + cid + ':tids:pinned', Date.now(), tid, next);
 				} else {
 					async.parallel([
@@ -292,7 +289,7 @@ module.exports = function (Topics) {
 							db.sortedSetAdd('cid:' + cid + ':tids:posts', topic.postcount, tid, next);
 						},
 						function (next) {
-							var votes = (parseInt(topic.upvotes, 10) || 0) - (parseInt(topic.downvotes, 10) || 0);
+							var votes = topic.upvotes - topic.downvotes;
 							db.sortedSetAdd('cid:' + cid + ':tids:votes', votes, tid, next);
 						},
 					], function (err) {

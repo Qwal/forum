@@ -8,24 +8,42 @@ var path = require('path');
 var childProcess = require('child_process');
 var less = require('less');
 var async = require('async');
-var uglify = require('uglify-js');
+var uglify = require('uglify-es');
 var nconf = require('nconf');
 var Benchpress = require('benchpressjs');
 
 var app = express();
 var server;
 
-winston.add(winston.transports.File, {
-	filename: 'logs/webinstall.log',
-	colorize: true,
-	timestamp: function () {
-		var date = new Date();
-		return date.getDate() + '/' + (date.getMonth() + 1) + ' ' + date.toTimeString().substr(0, 5) + ' [' + global.process.pid + ']';
-	},
+var formats = [
+	winston.format.colorize(),
+];
+
+const timestampFormat = winston.format((info) => {
+	var dateString = new Date().toISOString() + ' [' + global.process.pid + ']';
+	info.level = dateString + ' - ' + info.level;
+	return info;
+});
+formats.push(timestampFormat());
+formats.push(winston.format.splat());
+formats.push(winston.format.simple());
+
+winston.configure({
 	level: 'verbose',
+	format: winston.format.combine.apply(null, formats),
+	transports: [
+		new winston.transports.Console({
+			handleExceptions: true,
+		}),
+		new winston.transports.File({
+			filename: 'logs/webinstall.log',
+			handleExceptions: true,
+		}),
+	],
 });
 
-var web = {};
+var web = module.exports;
+
 var scripts = [
 	'node_modules/jquery/dist/jquery.js',
 	'public/vendor/xregexp/xregexp.js',
@@ -34,9 +52,14 @@ var scripts = [
 	'public/src/installer/install.js',
 ];
 
+var installing = false;
+var success = false;
+var error = false;
+var launchUrl;
+
 web.install = function (port) {
 	port = port || 4567;
-	winston.info('Launching web installer on port', port);
+	winston.info('Launching web installer on port ' + port);
 
 	app.use(express.static('public', {}));
 	app.engine('tpl', function (filepath, options, callback) {
@@ -84,7 +107,7 @@ function ping(req, res) {
 }
 
 function welcome(req, res) {
-	var dbs = ['redis', 'mongo'];
+	var dbs = ['redis', 'mongo', 'postgres'];
 	var databases = dbs.map(function (databaseName) {
 		var questions = require('../src/database/' + databaseName).questions.filter(function (question) {
 			return question && !question.hideOnWebInstall;
@@ -99,17 +122,25 @@ function welcome(req, res) {
 	var defaults = require('./data/defaults');
 
 	res.render('install/index', {
+		url: nconf.get('url') || (req.protocol + '://' + req.get('host')),
+		launchUrl: launchUrl,
+		skipGeneralSetup: !!nconf.get('url'),
 		databases: databases,
 		skipDatabaseSetup: !!nconf.get('database'),
-		error: !!res.locals.error,
-		success: !!res.locals.success,
+		error: error,
+		success: success,
 		values: req.body,
 		minimumPasswordLength: defaults.minimumPasswordLength,
+		installing: installing,
 	});
 }
 
 function install(req, res) {
+	if (installing) {
+		return welcome(req, res);
+	}
 	req.setTimeout(0);
+	installing = true;
 	var setupEnvVars = nconf.get();
 	for (var i in req.body) {
 		if (req.body.hasOwnProperty(i) && !process.env.hasOwnProperty(i)) {
@@ -122,22 +153,26 @@ function install(req, res) {
 		setupEnvVars[parentKey + '__' + key] = setupEnvVars[parentKey][key];
 	};
 	for (var j in setupEnvVars) {
-		if (setupEnvVars.hasOwnProperty(j) && typeof setupEnvVars[j] === 'object' && setupEnvVars[j] !== null) {
+		if (setupEnvVars.hasOwnProperty(j) && typeof setupEnvVars[j] === 'object' && setupEnvVars[j] !== null && !Array.isArray(setupEnvVars[j])) {
 			Object.keys(setupEnvVars[j]).forEach(pushToRoot.bind(null, j));
 			delete setupEnvVars[j];
+		} else if (Array.isArray(setupEnvVars[j])) {
+			setupEnvVars[j] = JSON.stringify(setupEnvVars[j]);
 		}
 	}
+
+	winston.info('Starting setup process');
+	winston.info(setupEnvVars);
+	launchUrl = setupEnvVars.url;
 
 	var child = require('child_process').fork('app', ['--setup'], {
 		env: setupEnvVars,
 	});
 
 	child.on('close', function (data) {
-		if (data === 0) {
-			res.locals.success = true;
-		} else {
-			res.locals.error = true;
-		}
+		installing = false;
+		success = data === 0;
+		error = data !== 0;
 
 		welcome(req, res);
 	});
@@ -257,5 +292,3 @@ function loadDefaults(next) {
 		next();
 	});
 }
-
-module.exports = web;

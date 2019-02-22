@@ -57,13 +57,14 @@
 	"section-advanced": "高度",
 	"advanced/database": "データベース",
 	"advanced/events": "イベント",
+	"advanced/hooks": "Hooks",
 	"advanced/logs": "ログ",
 	"advanced/errors": "エラー",
 	"advanced/cache": "キャッシュ",
 	"development/logger": "ロガー",
 	"development/info": "情報",
 
-	"reload-forum": "フォーラムを再読み込み",
+	"rebuild-and-restart-forum": "Rebuild & Restart Forum",
 	"restart-forum": "フォーラムを再開",
 	"logout": "ログアウト",
 	"view-forum": "フォーラムを表示",
@@ -74,5 +75,8 @@
 	"search.keep-typing": "結果を見るにはもっと入力してください...",
 	"search.start-typing": "結果を見るために入力を開始...",
 
-	"connection-lost": "％1への接続が切れたので、再接続しています..."
+	"connection-lost": "％1への接続が切れたので、再接続しています...",
+
+	"alerts.version": "Running <strong>NodeBB v%1</strong>",
+	"alerts.upgrade": "Upgrade to v%1"
 }

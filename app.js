@@ -19,11 +19,7 @@
 
 'use strict';
 
-if (require.main !== module) {
-	require.main.require = function (path) {
-		return require(path);
-	};
-}
+require('./require-main');
 
 var nconf = require('nconf');
 nconf.argv().env({
@@ -39,18 +35,15 @@ var file = require('./src/file');
 global.env = process.env.NODE_ENV || 'production';
 
 // Alternate configuration file support
-var	configFile = path.join(__dirname, 'config.json');
-
-if (nconf.get('config')) {
-	configFile = path.resolve(__dirname, nconf.get('config'));
-}
+var	configFile = path.resolve(__dirname, nconf.any(['config', 'CONFIG']) || 'config.json');
 
 var configExists = file.existsSync(configFile) || (nconf.get('url') && nconf.get('secret') && nconf.get('database'));
 
 var prestart = require('./src/prestart');
 prestart.loadConfig(configFile);
-prestart.versionCheck();
 prestart.setupWinston();
+prestart.versionCheck();
+winston.verbose('* using configuration stored in: %s', configFile);
 
 if (!process.send) {
 	// If run using `node app`, log GNU copyright info along with server info
@@ -96,4 +89,3 @@ if (nconf.get('setup') || nconf.get('install')) {
 } else {
 	require('./src/start').start();
 }
-

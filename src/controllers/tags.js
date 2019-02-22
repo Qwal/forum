@@ -5,6 +5,7 @@ var validator = require('validator');
 
 var user = require('../user');
 var topics = require('../topics');
+var privileges = require('../privileges');
 var pagination = require('../pagination');
 var helpers = require('./helpers');
 
@@ -22,15 +23,16 @@ tagsController.getTag = function (req, res, next) {
 	};
 	var settings;
 	var topicCount = 0;
+	var start;
+
 	async.waterfall([
 		function (next) {
 			user.getSettings(req.uid, next);
 		},
 		function (_settings, next) {
 			settings = _settings;
-			var start = Math.max(0, (page - 1) * settings.topicsPerPage);
+			start = Math.max(0, (page - 1) * settings.topicsPerPage);
 			var stop = start + settings.topicsPerPage - 1;
-			templateData.nextStart = stop + 1;
 			async.parallel({
 				topicCount: function (next) {
 					topics.getTagTopicCount(req.params.tag, next);
@@ -47,7 +49,8 @@ tagsController.getTag = function (req, res, next) {
 			topicCount = results.topicCount;
 			topics.getTopics(results.tids, req.uid, next);
 		},
-		function (topics) {
+		function (topicsData) {
+			topics.calculateTopicIndices(topicsData, start);
 			res.locals.metaTags = [
 				{
 					name: 'title',
@@ -58,7 +61,7 @@ tagsController.getTag = function (req, res, next) {
 					content: tag,
 				},
 			];
-			templateData.topics = topics;
+			templateData.topics = topicsData;
 
 			var pageCount =	Math.max(1, Math.ceil(topicCount / settings.topicsPerPage));
 			templateData.pagination = pagination.create(page, pageCount);
@@ -71,12 +74,20 @@ tagsController.getTag = function (req, res, next) {
 tagsController.getTags = function (req, res, next) {
 	async.waterfall([
 		function (next) {
-			topics.getTags(0, 99, next);
+			async.parallel({
+				canSearch: function (next) {
+					privileges.global.can('search:tags', req.uid, next);
+				},
+				tags: function (next) {
+					topics.getTags(0, 99, next);
+				},
+			}, next);
 		},
-		function (tags) {
-			tags = tags.filter(Boolean);
+		function (results) {
+			results.tags = results.tags.filter(Boolean);
 			var data = {
-				tags: tags,
+				tags: results.tags,
+				displayTagSearch: results.canSearch,
 				nextStart: 100,
 				breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[tags:tags]]' }]),
 				title: '[[pages:tags]]',

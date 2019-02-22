@@ -17,30 +17,44 @@ app.isConnected = false;
 
 	socket = io(config.websocketAddress, ioParams);
 
-	socket.on('connect', onConnect);
+	if (parseInt(app.user.uid, 10) >= 0) {
+		addHandlers();
+	}
 
-	socket.on('reconnecting', onReconnecting);
+	function addHandlers() {
+		socket.on('connect', onConnect);
 
-	socket.on('disconnect', onDisconnect);
+		socket.on('reconnecting', function () {
+			// Wait 2s before firing
+			setTimeout(function () {
+				if (socket.disconnected) {
+					onReconnecting();
+				}
+			}, 2000);
+		});
 
-	socket.on('reconnect_failed', function () {
-		// Wait ten times the reconnection delay and then start over
-		setTimeout(socket.connect.bind(socket), parseInt(config.reconnectionDelay, 10) * 10);
-	});
+		socket.on('disconnect', onDisconnect);
 
-	socket.on('checkSession', function (uid) {
-		if (parseInt(uid, 10) !== parseInt(app.user.uid, 10)) {
-			app.handleInvalidSession();
-		}
-	});
+		socket.on('reconnect_failed', function () {
+			// Wait ten times the reconnection delay and then start over
+			setTimeout(socket.connect.bind(socket), parseInt(config.reconnectionDelay, 10) * 10);
+		});
 
-	socket.on('setHostname', function (hostname) {
-		app.upstreamHost = hostname;
-	});
+		socket.on('checkSession', function (uid) {
+			if (parseInt(uid, 10) !== parseInt(app.user.uid, 10)) {
+				app.handleInvalidSession();
+			}
+		});
 
-	socket.on('event:banned', onEventBanned);
+		socket.on('setHostname', function (hostname) {
+			app.upstreamHost = hostname;
+		});
 
-	socket.on('event:alert', app.alert);
+		socket.on('event:banned', onEventBanned);
+		socket.on('event:alert', function (params) {
+			app.alert(params);
+		});
+	}
 
 	function onConnect() {
 		app.isConnected = true;
@@ -136,5 +150,17 @@ app.isConnected = false;
 				window.location.href = config.relative_path + '/';
 			},
 		});
+	}
+
+	if (
+		config.socketioOrigins &&
+		config.socketioOrigins !== '*' &&
+		config.socketioOrigins.indexOf(location.hostname) === -1
+	) {
+		console.error(
+			'You are accessing the forum from an unknown origin. This will likely result in websockets failing to connect. \n' +
+			'To fix this, set the `"url"` value in `config.json` to the URL at which you access the site. \n' +
+			'For more information, see this FAQ topic: https://community.nodebb.org/topic/13388'
+		);
 	}
 }());

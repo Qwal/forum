@@ -20,7 +20,6 @@ describe('Messaging Library', function () {
 	var roomId;
 
 	before(function (done) {
-		Groups.resetCache();
 		// Create 3 users: 1 admin, 2 regular
 		async.series([
 			async.apply(User.create, { username: 'foo', password: 'barbar' }),	// admin
@@ -234,8 +233,8 @@ describe('Messaging Library', function () {
 		});
 
 		it('should fail to remove user from room if user does not exist', function (done) {
-			socketModules.chats.removeUserFromRoom({ uid: fooUid }, { roomId: roomId, username: 'doesnotexist' }, function (err) {
-				assert.equal(err.message, '[[error:no-user]]');
+			socketModules.chats.removeUserFromRoom({ uid: fooUid }, { roomId: roomId, uid: 99 }, function (err) {
+				assert.equal('[[error:no-user]]', err.message);
 				done();
 			});
 		});
@@ -246,11 +245,11 @@ describe('Messaging Library', function () {
 				Messaging.isUserInRoom(herpUid, roomId, function (err, isInRoom) {
 					assert.ifError(err);
 					assert(isInRoom);
-					socketModules.chats.removeUserFromRoom({ uid: fooUid }, { roomId: roomId, username: 'herp' }, function (err) {
+					socketModules.chats.removeUserFromRoom({ uid: fooUid }, { roomId: roomId, uid: herpUid }, function (err) {
 						assert.equal(err.message, '[[error:cant-remove-last-user]]');
 						socketModules.chats.addUserToRoom({ uid: fooUid }, { roomId: roomId, username: 'baz' }, function (err) {
 							assert.ifError(err);
-							socketModules.chats.removeUserFromRoom({ uid: fooUid }, { roomId: roomId, username: 'herp' }, function (err) {
+							socketModules.chats.removeUserFromRoom({ uid: fooUid }, { roomId: roomId, uid: herpUid }, function (err) {
 								assert.ifError(err);
 								Messaging.isUserInRoom(herpUid, roomId, function (err, isInRoom) {
 									assert.ifError(err);
@@ -274,6 +273,13 @@ describe('Messaging Library', function () {
 						done();
 					});
 				});
+			});
+		});
+
+		it('should fail to send chat if content is empty', function (done) {
+			socketModules.chats.send({ uid: fooUid }, { roomId: roomId, message: ' ' }, function (err) {
+				assert.equal(err.message, '[[error:invalid-chat-message]]');
+				done();
 			});
 		});
 
@@ -343,7 +349,7 @@ describe('Messaging Library', function () {
 		it('should notify offline users of message', function (done) {
 			Messaging.notificationSendDelay = 100;
 
-			db.sortedSetAdd('users:online', Date.now() - 350000, herpUid, function (err) {
+			db.sortedSetAdd('users:online', Date.now() - ((meta.config.onlineCutoff * 60000) + 50000), herpUid, function (err) {
 				assert.ifError(err);
 				socketModules.chats.send({ uid: fooUid }, { roomId: roomId, message: 'second chat message' }, function (err) {
 					assert.ifError(err);
@@ -552,6 +558,13 @@ describe('Messaging Library', function () {
 						done();
 					});
 				});
+			});
+		});
+
+		it('should fail to edit message if new content is empty string', function (done) {
+			socketModules.chats.edit({ uid: fooUid }, { mid: 5, roomId: roomId, message: ' ' }, function (err) {
+				assert.equal(err.message, '[[error:invalid-chat-message]]');
+				done();
 			});
 		});
 

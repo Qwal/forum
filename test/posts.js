@@ -5,6 +5,9 @@ var	assert = require('assert');
 var async = require('async');
 var request = require('request');
 var nconf = require('nconf');
+var crypto = require('crypto');
+var fs = require('fs');
+var path = require('path');
 
 var db = require('./mocks/databasemock');
 var topics = require('../src/topics');
@@ -27,7 +30,6 @@ describe('Post\'s', function () {
 	var cid;
 
 	before(function (done) {
-		groups.resetCache();
 		async.series({
 			voterUid: function (next) {
 				user.create({ username: 'upvoter' }, next);
@@ -68,6 +70,14 @@ describe('Post\'s', function () {
 
 				groups.join('Global Moderators', globalModUid, done);
 			});
+		});
+	});
+
+	it('should return falsy if post does not exist', function (done) {
+		posts.getPostData(9999, function (err, postData) {
+			assert.ifError(err);
+			assert.equal(postData, null);
+			done();
 		});
 	});
 
@@ -249,7 +259,7 @@ describe('Post\'s', function () {
 				assert.ifError(err);
 				posts.getPostField(replyPid, 'deleted', function (err, isDeleted) {
 					assert.ifError(err);
-					assert.equal(parseInt(isDeleted, 10), 1);
+					assert.strictEqual(isDeleted, 1);
 					done();
 				});
 			});
@@ -260,7 +270,7 @@ describe('Post\'s', function () {
 				assert.ifError(err);
 				posts.getPostField(replyPid, 'deleted', function (err, isDeleted) {
 					assert.ifError(err);
-					assert.equal(parseInt(isDeleted, 10), 0);
+					assert.strictEqual(isDeleted, 0);
 					done();
 				});
 			});
@@ -271,10 +281,10 @@ describe('Post\'s', function () {
 				assert.ifError(err);
 				posts.getPostField(replyPid, 'deleted', function (err, deleted) {
 					assert.ifError(err);
-					assert.equal(parseInt(deleted, 10), 1);
+					assert.strictEqual(deleted, 1);
 					posts.getPostField(mainPid, 'deleted', function (err, deleted) {
 						assert.ifError(err);
-						assert.equal(parseInt(deleted, 10), 1);
+						assert.strictEqual(deleted, 1);
 						done();
 					});
 				});
@@ -288,7 +298,7 @@ describe('Post\'s', function () {
 					assert.ifError(err);
 					topics.getTopicField(data.topicData.tid, 'deleted', function (err, deleted) {
 						assert.ifError(err);
-						assert.equal(parseInt(deleted, 10), 1);
+						assert.strictEqual(deleted, 1);
 						done();
 					});
 				});
@@ -362,7 +372,7 @@ describe('Post\'s', function () {
 		});
 
 		it('should error if title is too long', function (done) {
-			var longTitle = new Array(parseInt(meta.config.maximumTitleLength, 10) + 2).join('a');
+			var longTitle = new Array(meta.config.maximumTitleLength + 2).join('a');
 			socketPosts.edit({ uid: voterUid }, { pid: pid, content: 'edited post content', title: longTitle }, function (err) {
 				assert.equal(err.message, '[[error:title-too-long, ' + meta.config.maximumTitleLength + ']]');
 				done();
@@ -398,7 +408,7 @@ describe('Post\'s', function () {
 		});
 
 		it('should error if content is too long', function (done) {
-			var longContent = new Array(parseInt(meta.config.maximumPostLength, 10) + 2).join('a');
+			var longContent = new Array(meta.config.maximumPostLength + 2).join('a');
 			socketPosts.edit({ uid: voterUid }, { pid: pid, content: longContent }, function (err) {
 				assert.equal(err.message, '[[error:content-too-long, ' + meta.config.maximumPostLength + ']]');
 				done();
@@ -437,6 +447,40 @@ describe('Post\'s', function () {
 				assert.equal(data.editor, voterUid);
 				assert.equal(data.topic.isMainPost, false);
 				assert.equal(data.topic.renamed, false);
+				done();
+			});
+		});
+
+		it('should return diffs', function (done) {
+			posts.diffs.get(replyPid, 0, function (err, data) {
+				assert.ifError(err);
+				assert(Array.isArray(data));
+				assert(data[0].pid, replyPid);
+				assert(data[0].patch);
+				done();
+			});
+		});
+
+		it('should load diffs and reconstruct post', function (done) {
+			posts.diffs.load(replyPid, 0, voterUid, function (err, data) {
+				assert.ifError(err);
+				assert.equal(data.content, 'A reply to edit');
+				done();
+			});
+		});
+
+		it('should not allow guests to view diffs', function (done) {
+			socketPosts.getDiffs({ uid: 0 }, { pid: 1 }, function (err) {
+				assert.equal(err.message, '[[error:no-privileges]]');
+				done();
+			});
+		});
+
+		it('should allow registered-users group to view diffs', function (done) {
+			socketPosts.getDiffs({ uid: 1 }, { pid: 1 }, function (err, timestamps) {
+				assert.ifError(err);
+				assert.equal(true, Array.isArray(timestamps));
+				assert.strictEqual(1, timestamps.length);
 				done();
 			});
 		});
@@ -555,6 +599,14 @@ describe('Post\'s', function () {
 	});
 
 	describe('parse', function () {
+		it('should not crash and return falsy if post data is falsy', function (done) {
+			posts.parsePost(null, function (err, postData) {
+				assert.ifError(err);
+				assert.strictEqual(postData, null);
+				done();
+			});
+		});
+
 		it('should store post content in cache', function (done) {
 			var oldValue = global.env;
 			global.env = 'production';
@@ -875,6 +927,227 @@ describe('Post\'s', function () {
 					socketPosts.accept({ uid: globalModUid }, { id: ids[1] }, next);
 				},
 			], done);
+		});
+	});
+
+	describe('upload methods', function () {
+		var pid;
+
+		before(function (done) {
+			// Create stub files for testing
+			['abracadabra.png', 'shazam.jpg', 'whoa.gif', 'amazeballs.jpg', 'wut.txt', 'test.bmp']
+				.forEach(filename => fs.closeSync(fs.openSync(path.join(__dirname, '../public/uploads/files', filename), 'w')));
+
+			topics.post({
+				uid: 1,
+				cid: 1,
+				title: 'topic with some images',
+				content: 'here is an image [alt text](/assets/uploads/files/abracadabra.png) and another [alt text](/assets/uploads/files/shazam.jpg)',
+			}, function (err, topicPostData) {
+				assert.ifError(err);
+				pid = topicPostData.postData.pid;
+				done();
+			});
+		});
+
+		describe('.sync()', function () {
+			it('should properly add new images to the post\'s zset', function (done) {
+				posts.uploads.sync(pid, function (err) {
+					assert.ifError(err);
+
+					db.sortedSetCard('post:' + pid + ':uploads', function (err, length) {
+						assert.ifError(err);
+						assert.strictEqual(2, length);
+						done();
+					});
+				});
+			});
+
+			it('should remove an image if it is edited out of the post', function (done) {
+				async.series([
+					function (next) {
+						posts.edit({
+							pid: pid,
+							uid: 1,
+							content: 'here is an image [alt text](/assets/uploads/files/abracadabra.png)... AND NO MORE!',
+						}, next);
+					},
+					async.apply(posts.uploads.sync, pid),
+				], function (err) {
+					assert.ifError(err);
+					db.sortedSetCard('post:' + pid + ':uploads', function (err, length) {
+						assert.ifError(err);
+						assert.strictEqual(1, length);
+						done();
+					});
+				});
+			});
+		});
+
+		describe('.list()', function () {
+			it('should display the uploaded files for a specific post', function (done) {
+				posts.uploads.list(pid, function (err, uploads) {
+					assert.ifError(err);
+					assert.equal(true, Array.isArray(uploads));
+					assert.strictEqual(1, uploads.length);
+					assert.equal('string', typeof uploads[0]);
+					done();
+				});
+			});
+		});
+
+		describe('.isOrphan()', function () {
+			it('should return false if upload is not an orphan', function (done) {
+				posts.uploads.isOrphan('abracadabra.png', function (err, isOrphan) {
+					assert.ifError(err);
+					assert.equal(false, isOrphan);
+					done();
+				});
+			});
+
+			it('should return true if upload is an orphan', function (done) {
+				posts.uploads.isOrphan('shazam.jpg', function (err, isOrphan) {
+					assert.ifError(err);
+					assert.equal(true, isOrphan);
+					done();
+				});
+			});
+		});
+
+		describe('.associate()', function () {
+			it('should add an image to the post\'s maintained list of uploads', function (done) {
+				async.waterfall([
+					async.apply(posts.uploads.associate, pid, 'whoa.gif'),
+					async.apply(posts.uploads.list, pid),
+				], function (err, uploads) {
+					assert.ifError(err);
+					assert.strictEqual(2, uploads.length);
+					assert.strictEqual(true, uploads.includes('whoa.gif'));
+					done();
+				});
+			});
+
+			it('should allow arrays to be passed in', function (done) {
+				async.waterfall([
+					async.apply(posts.uploads.associate, pid, ['amazeballs.jpg', 'wut.txt']),
+					async.apply(posts.uploads.list, pid),
+				], function (err, uploads) {
+					assert.ifError(err);
+					assert.strictEqual(4, uploads.length);
+					assert.strictEqual(true, uploads.includes('amazeballs.jpg'));
+					assert.strictEqual(true, uploads.includes('wut.txt'));
+					done();
+				});
+			});
+
+			it('should save a reverse association of md5sum to pid', function (done) {
+				const md5 = filename => crypto.createHash('md5').update(filename).digest('hex');
+
+				async.waterfall([
+					async.apply(posts.uploads.associate, pid, ['test.bmp']),
+					function (next) {
+						db.getSortedSetRange('upload:' + md5('test.bmp') + ':pids', 0, -1, next);
+					},
+				], function (err, pids) {
+					assert.ifError(err);
+					assert.strictEqual(true, Array.isArray(pids));
+					assert.strictEqual(true, pids.length > 0);
+					assert.equal(pid, pids[0]);
+					done();
+				});
+			});
+
+			it('should not associate a file that does not exist on the local disk', function (done) {
+				async.waterfall([
+					async.apply(posts.uploads.associate, pid, ['nonexistant.xls']),
+					async.apply(posts.uploads.list, pid),
+				], function (err, uploads) {
+					assert.ifError(err);
+					assert.strictEqual(uploads.length, 5);
+					assert.strictEqual(false, uploads.includes('nonexistant.xls'));
+					done();
+				});
+			});
+		});
+
+		describe('.dissociate()', function () {
+			it('should remove an image from the post\'s maintained list of uploads', function (done) {
+				async.waterfall([
+					async.apply(posts.uploads.dissociate, pid, 'whoa.gif'),
+					async.apply(posts.uploads.list, pid),
+				], function (err, uploads) {
+					assert.ifError(err);
+					assert.strictEqual(4, uploads.length);
+					assert.strictEqual(false, uploads.includes('whoa.gif'));
+					done();
+				});
+			});
+
+			it('should allow arrays to be passed in', function (done) {
+				async.waterfall([
+					async.apply(posts.uploads.dissociate, pid, ['amazeballs.jpg', 'wut.txt']),
+					async.apply(posts.uploads.list, pid),
+				], function (err, uploads) {
+					assert.ifError(err);
+					assert.strictEqual(2, uploads.length);
+					assert.strictEqual(false, uploads.includes('amazeballs.jpg'));
+					assert.strictEqual(false, uploads.includes('wut.txt'));
+					done();
+				});
+			});
+		});
+	});
+
+	describe('post uploads management', function () {
+		let topic;
+		let reply;
+		before(function (done) {
+			topics.post({
+				uid: 1,
+				cid: cid,
+				title: 'topic to test uploads with',
+				content: '[abcdef](/assets/uploads/files/abracadabra.png)',
+			}, function (err, topicPostData) {
+				assert.ifError(err);
+				topics.reply({
+					uid: 1,
+					tid: topicPostData.topicData.tid,
+					timestamp: Date.now(),
+					content: '[abcdef](/assets/uploads/files/shazam.jpg)',
+				}, function (err, replyData) {
+					assert.ifError(err);
+					topic = topicPostData;
+					reply = replyData;
+					done();
+				});
+			});
+		});
+
+		it('should automatically sync uploads on topic create and reply', function (done) {
+			db.sortedSetsCard(['post:' + topic.topicData.mainPid + ':uploads', 'post:' + reply.pid + ':uploads'], function (err, lengths) {
+				assert.ifError(err);
+				assert.strictEqual(1, lengths[0]);
+				assert.strictEqual(1, lengths[1]);
+				done();
+			});
+		});
+
+		it('should automatically sync uploads on post edit', function (done) {
+			async.waterfall([
+				async.apply(posts.edit, {
+					pid: reply.pid,
+					uid: 1,
+					content: 'no uploads',
+				}),
+				function (postData, next) {
+					posts.uploads.list(reply.pid, next);
+				},
+			], function (err, uploads) {
+				assert.ifError(err);
+				assert.strictEqual(true, Array.isArray(uploads));
+				assert.strictEqual(0, uploads.length);
+				done();
+			});
 		});
 	});
 });

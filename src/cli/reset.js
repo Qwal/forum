@@ -11,8 +11,12 @@ var events = require('../events');
 var meta = require('../meta');
 var plugins = require('../plugins');
 var widgets = require('../widgets');
+var privileges = require('../privileges');
 
 var dirname = require('./paths').baseDir;
+
+var themeNamePattern = /^(@.*?\/)?nodebb-theme-.*$/;
+var pluginNamePattern = /^(@.*?\/)?nodebb-(theme|plugin|widget|rewards)-.*$/;
 
 exports.reset = function (options, callback) {
 	var map = {
@@ -21,7 +25,7 @@ exports.reset = function (options, callback) {
 			if (themeId === true) {
 				resetThemes(next);
 			} else {
-				if (!themeId.startsWith('nodebb-theme-')) {
+				if (!themeNamePattern.test(themeId)) {
 					// Allow omission of `nodebb-theme-`
 					themeId = 'nodebb-theme-' + themeId;
 				}
@@ -34,7 +38,7 @@ exports.reset = function (options, callback) {
 			if (pluginId === true) {
 				resetPlugins(next);
 			} else {
-				if (!pluginId.startsWith('nodebb-plugin-')) {
+				if (!pluginNamePattern.test(pluginId)) {
 					// Allow omission of `nodebb-plugin-`
 					pluginId = 'nodebb-plugin-' + pluginId;
 				}
@@ -83,9 +87,13 @@ exports.reset = function (options, callback) {
 };
 
 function resetSettings(callback) {
-	meta.configs.set('allowLocalLogin', 1, function (err) {
+	privileges.global.give(['local:login'], 'registered-users', function (err) {
+		if (err) {
+			return callback(err);
+		}
+		winston.info('[reset] registered-users given login privilege');
 		winston.info('[reset] Settings reset to default');
-		callback(err);
+		callback();
 	});
 }
 
@@ -143,7 +151,7 @@ function resetPlugin(pluginId, callback) {
 		},
 	], function (err) {
 		if (err) {
-			winston.error('[reset] Could not disable plugin: %s encountered error %s', pluginId, err);
+			winston.error('[reset] Could not disable plugin: ' + pluginId + ' encountered error %s', err);
 		} else if (active) {
 			winston.info('[reset] Plugin `%s` disabled', pluginId);
 		} else {

@@ -8,6 +8,7 @@ var querystring = require('querystring');
 var meta = require('../meta');
 var pagination = require('../pagination');
 var user = require('../user');
+var categories = require('../categories');
 var topics = require('../topics');
 var plugins = require('../plugins');
 var helpers = require('./helpers');
@@ -18,7 +19,7 @@ unreadController.get = function (req, res, next) {
 	var page = parseInt(req.query.page, 10) || 1;
 	var results;
 	var cid = req.query.cid;
-	var filter = req.params.filter || '';
+	var filter = req.query.filter || '';
 	var settings;
 
 	async.waterfall([
@@ -32,7 +33,11 @@ unreadController.get = function (req, res, next) {
 
 			async.parallel({
 				watchedCategories: function (next) {
-					helpers.getWatchedCategories(req.uid, cid, next);
+					if (plugins.hasListeners('filter:unread.categories')) {
+						plugins.fireHook('filter:unread.categories', { uid: req.uid, cid: cid }, next);
+					} else {
+						helpers.getCategoriesByStates(req.uid, cid, [categories.watchStates.watching], next);
+					}
 				},
 				settings: function (next) {
 					user.getSettings(req.uid, next);
@@ -65,6 +70,7 @@ unreadController.get = function (req, res, next) {
 			}
 
 			data.categories = results.watchedCategories.categories;
+			data.allCategoriesUrl = 'unread' + helpers.buildQueryString('', filter, '');
 			data.selectedCategory = results.watchedCategories.selectedCategory;
 			data.selectedCids = results.watchedCategories.selectedCids;
 			if (req.originalUrl.startsWith(nconf.get('relative_path') + '/api/unread') || req.originalUrl.startsWith(nconf.get('relative_path') + '/unread')) {
@@ -72,20 +78,19 @@ unreadController.get = function (req, res, next) {
 				data.breadcrumbs = helpers.buildBreadcrumbs([{ text: '[[unread:title]]' }]);
 			}
 
-			data.filters = helpers.buildFilters('unread', filter);
+			data.filters = helpers.buildFilters('unread', filter, req.query);
 
 			data.selectedFilter = data.filters.find(function (filter) {
 				return filter && filter.selected;
 			});
 
-			data.querystring = cid ? '?' + querystring.stringify({ cid: cid }) : '';
 			res.render('unread', data);
 		},
 	], next);
 };
 
 unreadController.unreadTotal = function (req, res, next) {
-	var filter = req.params.filter || '';
+	var filter = req.query.filter || '';
 
 	async.waterfall([
 		function (next) {

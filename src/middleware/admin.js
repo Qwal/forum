@@ -72,7 +72,7 @@ module.exports = function (middleware) {
 			function (results, next) {
 				var userData = results.userData;
 				userData.uid = req.uid;
-				userData['email:confirmed'] = parseInt(userData['email:confirmed'], 10) === 1;
+				userData['email:confirmed'] = userData['email:confirmed'] === 1;
 
 				var acpPath = req.path.slice(1).split('/');
 				acpPath.forEach(function (path, i) {
@@ -82,6 +82,7 @@ module.exports = function (middleware) {
 
 				var version = nconf.get('version');
 
+				res.locals.config.userLang = res.locals.config.acpLang || res.locals.config.userLang;
 				var templateValues = {
 					config: res.locals.config,
 					configJSON: jsesc(JSON.stringify(res.locals.config), { isScriptContext: true }),

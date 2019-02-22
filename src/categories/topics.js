@@ -7,6 +7,7 @@ var db = require('../database');
 var topics = require('../topics');
 var plugins = require('../plugins');
 var meta = require('../meta');
+var user = require('../user');
 
 module.exports = function (Categories) {
 	Categories.getCategoryTopics = function (data, callback) {
@@ -20,16 +21,14 @@ module.exports = function (Categories) {
 			function (tids, next) {
 				topics.getTopicsByTids(tids, data.uid, next);
 			},
-			function (topics, next) {
-				if (!topics.length) {
+			async.apply(user.blocks.filter, data.uid),
+			function (topicsData, next) {
+				if (!topicsData.length) {
 					return next(null, { topics: [], uid: data.uid });
 				}
+				topics.calculateTopicIndices(topicsData, data.start);
 
-				for (var i = 0; i < topics.length; i += 1) {
-					topics[i].index = data.start + i;
-				}
-
-				plugins.fireHook('filter:category.topics.get', { cid: data.cid, topics: topics, uid: data.uid }, next);
+				plugins.fireHook('filter:category.topics.get', { cid: data.cid, topics: topicsData, uid: data.uid }, next);
 			},
 			function (results, next) {
 				next(null, { topics: results.topics, nextStart: data.stop + 1 });
@@ -55,7 +54,7 @@ module.exports = function (Categories) {
 			function (results, next) {
 				var totalPinnedCount = results.pinnedTids.length;
 
-				pinnedTids = results.pinnedTids.slice(data.start, data.stop === -1 ? undefined : data.stop + 1);
+				pinnedTids = results.pinnedTids.slice(data.start, data.stop !== -1 ? data.stop + 1 : undefined);
 
 				var pinnedCount = pinnedTids.length;
 
@@ -99,9 +98,7 @@ module.exports = function (Categories) {
 				}
 			},
 			function (normalTids, next) {
-				normalTids = normalTids.filter(function (tid) {
-					return pinnedTids.indexOf(tid) === -1;
-				});
+				normalTids = normalTids.filter(tid => !pinnedTids.includes(tid));
 
 				next(null, pinnedTids.concat(normalTids));
 			},
@@ -148,9 +145,7 @@ module.exports = function (Categories) {
 
 		if (data.tag) {
 			if (Array.isArray(data.tag)) {
-				set = [set].concat(data.tag.map(function (tag) {
-					return 'tag:' + tag + ':topics';
-				}));
+				set = [set].concat(data.tag.map(tag => 'tag:' + tag + ':topics'));
 			} else {
 				set = [set, 'tag:' + data.tag + ':topics'];
 			}
@@ -207,11 +202,6 @@ module.exports = function (Categories) {
 		});
 	};
 
-	Categories.getTopicIndex = function (tid, callback) {
-		console.warn('[Categories.getTopicIndex] deprecated');
-		callback(null, 1);
-	};
-
 	Categories.onNewPostMade = function (cid, pinned, postData, callback) {
 		if (!cid || !postData) {
 			return setImmediate(callback);
@@ -228,7 +218,7 @@ module.exports = function (Categories) {
 				db.incrObjectField('category:' + cid, 'post_count', next);
 			},
 			function (next) {
-				if (parseInt(pinned, 10) === 1) {
+				if (pinned) {
 					return setImmediate(next);
 				}
 

@@ -9,6 +9,7 @@
 	"updated": "Updated",
 	"target-purged": "The content this flag referred to has been purged and is no longer available.",
 
+	"graph-label": "Daily Flags",
 	"quick-filters": "Quick Filters",
 	"filter-active": "There are one or more filters active in this list of flags",
 	"filter-reset": "Remove Filters",
@@ -18,6 +19,7 @@
 	"filter-type": "Flag Type",
 	"filter-type-all": "All Content",
 	"filter-type-post": "Post",
+	"filter-type-user": "User",
 	"filter-state": "State",
 	"filter-assignee": "Assignee UID",
 	"filter-cid": "Category",

@@ -37,8 +37,8 @@
 	"search-plugin-tooltip": "Install a search plugin from the plugin page in order to activate search functionality",
 
 	"control-panel": "System Control",
-	"reload": "Restart",
-	"restart": "Rebuild &amp; Restart",
+	"rebuild-and-restart": "Rebuild &amp; Restart",
+	"restart": "Restart",
 	"restart-warning": "Rebuilding or Restarting your NodeBB will drop all existing connections for a few seconds.",
 	"restart-disabled": "Rebuilding and Restarting your NodeBB has been disabled as you do not seem to be running it via the appropriate daemon.",
 	"maintenance-mode": "Maintenance Mode",
@@ -65,7 +65,12 @@
 	"high-presence-topics": "High Presence Topics",
 
 	"graphs.page-views": "Page Views",
+	"graphs.page-views-registered": "Page Views Registered",
+	"graphs.page-views-guest": "Page Views Guest",
+	"graphs.page-views-bot": "Page Views Bot",
 	"graphs.unique-visitors": "Unique Visitors",
 	"graphs.registered-users": "Registered Users",
-	"graphs.anonymous-users": "Anonymous Users"
+	"graphs.anonymous-users": "Anonymous Users",
+	"last-restarted-by": "Last restarted by",
+	"no-users-browsing": "No users browsing"
 }

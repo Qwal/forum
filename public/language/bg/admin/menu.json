@@ -57,13 +57,14 @@
 	"section-advanced": "Разширени",
 	"advanced/database": "База данни",
 	"advanced/events": "Събития",
+	"advanced/hooks": "Куки",
 	"advanced/logs": "Журнали",
 	"advanced/errors": "Грешки",
 	"advanced/cache": "Кеш",
 	"development/logger": "Система на журнала",
 	"development/info": "Информация",
 
-	"reload-forum": "Презареждане на форума",
+	"rebuild-and-restart-forum": "Повторно изграждане и рестартиране на форума",
 	"restart-forum": "Рестартиране на форума",
 	"logout": "Изход",
 	"view-forum": "Преглед на форума",
@@ -74,5 +75,8 @@
 	"search.keep-typing": "Продължете да пишете, за да видите още резултати…",
 	"search.start-typing": "Започнете да пишете, за да получите резултати…",
 
-	"connection-lost": "Връзката към %1 беше прекъсната. опитваме се да Ви свържем отново…"
+	"connection-lost": "Връзката към %1 беше прекъсната. опитваме се да Ви свържем отново…",
+
+	"alerts.version": "Използва се <strong>NodeBB версия %1</strong>",
+	"alerts.upgrade": "Обновяване до v%1"
 }

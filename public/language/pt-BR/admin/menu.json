@@ -14,7 +14,7 @@
 	"manage/users": "Usuários",
 	"manage/admins-mods": "Admins & Mods",
 	"manage/registration": "Fila de Registro",
-	"manage/post-queue": "Fileira da Posts",
+	"manage/post-queue": "File de Posts",
 	"manage/groups": "Grupos",
 	"manage/ip-blacklist": "Lista Negra de IPs",
 	"manage/uploads": "Uploads",
@@ -57,22 +57,26 @@
 	"section-advanced": "Avançado",
 	"advanced/database": "Banco de Dados",
 	"advanced/events": "Eventos",
+	"advanced/hooks": "Hooks",
 	"advanced/logs": "Logs",
 	"advanced/errors": "Erros",
 	"advanced/cache": "Cache",
 	"development/logger": "Logger",
 	"development/info": "Informação",
 
-	"reload-forum": "Recarregar Fórum",
+	"rebuild-and-restart-forum": "Rebuild & Restart Forum",
 	"restart-forum": "Reiniciar o Fórum",
 	"logout": "Sair da Conta",
 	"view-forum": "Ver Fórum",
 
-	"search.placeholder": "Search for settings",
+	"search.placeholder": "Pesquisar configurações",
 	"search.no-results": "Sem resultados...",
 	"search.search-forum": "Pesquisar o fórum por <strong></strong>",
 	"search.keep-typing": "Digite para ver mais resultados...",
 	"search.start-typing": "Comece a digitar para ver resultados...",
 
-	"connection-lost": "A conexão com %1 foi perdida, tentando reconectar..."
+	"connection-lost": "A conexão com %1 foi perdida, tentando reconectar...",
+
+	"alerts.version": "Running <strong>NodeBB v%1</strong>",
+	"alerts.upgrade": "Upgrade to v%1"
 }

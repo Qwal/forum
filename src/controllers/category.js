@@ -13,6 +13,7 @@ var pagination = require('../pagination');
 var helpers = require('./helpers');
 var utils = require('../utils');
 var translator = require('../translator');
+var analytics = require('../analytics');
 
 var categoryController = module.exports;
 
@@ -51,7 +52,7 @@ categoryController.get = function (req, res, callback) {
 			userPrivileges = results.privileges;
 			rssToken = results.rssToken;
 
-			if (!results.categoryData.slug || (results.categoryData && parseInt(results.categoryData.disabled, 10) === 1)) {
+			if (!results.categoryData.slug || (results.categoryData && results.categoryData.disabled)) {
 				return callback();
 			}
 
@@ -65,7 +66,7 @@ categoryController.get = function (req, res, callback) {
 
 			settings = results.userSettings;
 
-			var topicCount = parseInt(results.categoryData.topic_count, 10);
+			var topicCount = results.categoryData.topic_count;
 			pageCount = Math.max(1, Math.ceil(topicCount / settings.topicsPerPage));
 
 			if (topicIndex < 0 || topicIndex > Math.max(topicCount - 1, 0)) {
@@ -102,6 +103,9 @@ categoryController.get = function (req, res, callback) {
 			}, next);
 		},
 		function (categoryData, next) {
+			if (!categoryData) {
+				return callback();
+			}
 			categories.modifyTopicsByPrivilege(categoryData.topics, userPrivileges);
 
 			if (categoryData.link) {
@@ -134,8 +138,8 @@ categoryController.get = function (req, res, callback) {
 
 			addTags(categoryData, res);
 
-			categoryData['feeds:disableRSS'] = parseInt(meta.config['feeds:disableRSS'], 10) === 1;
-			categoryData['reputation:disabled'] = parseInt(meta.config['reputation:disabled'], 10) === 1;
+			categoryData['feeds:disableRSS'] = meta.config['feeds:disableRSS'];
+			categoryData['reputation:disabled'] = meta.config['reputation:disabled'];
 			categoryData.title = translator.escape(categoryData.name);
 			pageCount = Math.max(1, Math.ceil(categoryData.topic_count / settings.topicsPerPage));
 			categoryData.pagination = pagination.create(currentPage, pageCount, req.query);
@@ -143,6 +147,8 @@ categoryController.get = function (req, res, callback) {
 				rel.href = nconf.get('url') + '/category/' + categoryData.slug + rel.href;
 				res.locals.linkTags.push(rel);
 			});
+
+			analytics.increment(['pageviews:byCid:' + categoryData.cid]);
 
 			res.render('category', categoryData);
 		},

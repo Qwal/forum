@@ -3,19 +3,31 @@
 
 define('postSelect', ['components'], function (components) {
 	var PostSelect = {};
+	var onSelect;
 
 	PostSelect.pids = [];
 
-	PostSelect.init = function (onSelect) {
+	PostSelect.init = function (_onSelect) {
 		PostSelect.pids.length = 0;
-		components.get('topic').on('click', '[data-pid]', function () {
-			togglePostSelection($(this), onSelect);
-		});
+		onSelect = _onSelect;
+		$('#content').on('click', '[component="topic"] [component="post"]', onPostClicked);
 		disableClicksOnPosts();
 	};
 
+	function onPostClicked() {
+		PostSelect.togglePostSelection($(this));
+	}
 
-	function togglePostSelection(post, callback) {
+	PostSelect.disable = function () {
+		PostSelect.pids.forEach(function (pid) {
+			components.get('post', 'pid', pid).toggleClass('bg-success', false);
+		});
+
+		$('#content').off('click', '[component="topic"] [component="post"]', onPostClicked);
+		enableClicksOnPosts();
+	};
+
+	PostSelect.togglePostSelection = function (post) {
 		var newPid = post.attr('data-pid');
 
 		if (parseInt(post.attr('data-index'), 10) === 0) {
@@ -35,9 +47,11 @@ define('postSelect', ['components'], function (components) {
 			if (PostSelect.pids.length) {
 				PostSelect.pids.sort(function (a, b) { return a - b; });
 			}
-			callback();
+			if (typeof onSelect === 'function') {
+				onSelect();
+			}
 		}
-	}
+	};
 
 
 	function disableClicks() {
@@ -45,13 +59,12 @@ define('postSelect', ['components'], function (components) {
 	}
 
 	function disableClicksOnPosts() {
-		components.get('post').on('click', 'button,a', disableClicks);
+		$('#content').on('click', '[component="post"] button, [component="post"] a', disableClicks);
 	}
 
-	PostSelect.enableClicksOnPosts = function () {
-		components.get('post').off('click', 'button,a', disableClicks);
-	};
-
+	function enableClicksOnPosts() {
+		$('#content').off('click', '[component="post"] button, [component="post"] a', disableClicks);
+	}
 
 	return PostSelect;
 });

@@ -19,7 +19,7 @@ var sitemap = {
 };
 
 sitemap.render = function (callback) {
-	var topicsPerPage = parseInt(meta.config.sitemapTopics, 10) || 500;
+	var topicsPerPage = meta.config.sitemapTopics;
 	var returnData = {
 		url: nconf.get('url'),
 		topics: [],
@@ -30,7 +30,7 @@ sitemap.render = function (callback) {
 			db.getObjectField('global', 'topicCount', next);
 		},
 		function (topicCount, next) {
-			var numPages = Math.max(0, topicCount / topicsPerPage);
+			var numPages = Math.ceil(Math.max(0, topicCount / topicsPerPage));
 			for (var x = 1; x <= numPages; x += 1) {
 				returnData.topics.push(x);
 			}
@@ -119,7 +119,7 @@ sitemap.getTopicPage = function (page, callback) {
 		return callback();
 	}
 
-	var numTopics = parseInt(meta.config.sitemapTopics, 10) || 500;
+	var numTopics = meta.config.sitemapTopics;
 	var min = (parseInt(page, 10) - 1) * numTopics;
 	var max = min + numTopics;
 

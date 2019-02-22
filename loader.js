@@ -7,16 +7,26 @@ var path = require('path');
 var fork = require('child_process').fork;
 var async = require('async');
 var logrotate = require('logrotate-stream');
+var mkdirp = require('mkdirp');
 
 var file = require('./src/file');
 var pkg = require('./package.json');
 
+var pathToConfig = path.resolve(__dirname, process.env.CONFIG || 'config.json');
+
 nconf.argv().env().file({
-	file: path.join(__dirname, 'config.json'),
+	file: pathToConfig,
 });
 
 var	pidFilePath = path.join(__dirname, 'pidfile');
-var outputLogFilePath = path.join(__dirname, 'logs/output.log');
+
+var outputLogFilePath = path.join(__dirname, nconf.get('logFile') || 'logs/output.log');
+
+var logDir = path.dirname(outputLogFilePath);
+if (!fs.existsSync(logDir)) {
+	mkdirp.sync(path.dirname(outputLogFilePath));
+}
+
 var output = logrotate({ file: outputLogFilePath, size: '1m', keep: 3, compress: true });
 var silent = nconf.get('silent') === 'false' ? false : nconf.get('silent') !== false;
 var numProcs;
@@ -35,7 +45,6 @@ Loader.init = function (callback) {
 	}
 
 	process.on('SIGHUP', Loader.restart);
-	process.on('SIGUSR2', Loader.reload);
 	process.on('SIGTERM', Loader.stop);
 	callback();
 };
@@ -82,9 +91,17 @@ Loader.addWorkerEvents = function (worker) {
 				console.log('[cluster] Restarting...');
 				Loader.restart();
 				break;
-			case 'reload':
-				console.log('[cluster] Reloading...');
-				Loader.reload();
+			case 'pubsub':
+				workers.forEach(function (w) {
+					w.send(message);
+				});
+				break;
+			case 'socket.io':
+				workers.forEach(function (w) {
+					if (w !== worker) {
+						w.send(message);
+					}
+				});
 				break;
 			}
 		}
@@ -113,7 +130,7 @@ function forkWorker(index, isPrimary) {
 	}
 
 	process.env.isPrimary = isPrimary;
-	process.env.isCluster = ports.length > 1;
+	process.env.isCluster = nconf.get('isCluster') || ports.length > 1;
 	process.env.port = ports[index];
 
 	var worker = fork(appPath, args, {
@@ -152,7 +169,6 @@ function getPorts() {
 Loader.restart = function () {
 	killWorkers();
 
-	var pathToConfig = path.join(__dirname, '/config.json');
 	nconf.remove('file');
 	nconf.use('file', { file: pathToConfig });
 
@@ -175,14 +191,6 @@ Loader.restart = function () {
 	});
 };
 
-Loader.reload = function () {
-	workers.forEach(function (worker) {
-		worker.send({
-			action: 'reload',
-		});
-	});
-};
-
 Loader.stop = function () {
 	killWorkers();
 
@@ -199,53 +207,41 @@ function killWorkers() {
 	});
 }
 
-Loader.notifyWorkers = function (msg, worker_pid) {
-	worker_pid = parseInt(worker_pid, 10);
-	workers.forEach(function (worker) {
-		if (parseInt(worker.pid, 10) !== worker_pid) {
-			try {
-				worker.send(msg);
-			} catch (e) {
-				console.log('[cluster/notifyWorkers] Failed to reach pid ' + worker_pid);
-			}
-		}
-	});
-};
-
-fs.open(path.join(__dirname, 'config.json'), 'r', function (err) {
-	if (!err) {
-		if (nconf.get('daemon') !== 'false' && nconf.get('daemon') !== false) {
-			if (file.existsSync(pidFilePath)) {
-				try {
-					var	pid = fs.readFileSync(pidFilePath, { encoding: 'utf-8' });
-					process.kill(pid, 0);
-					process.exit();
-				} catch (e) {
-					fs.unlinkSync(pidFilePath);
-				}
-			}
-
-			require('daemon')({
-				stdout: process.stdout,
-				stderr: process.stderr,
-				cwd: process.cwd(),
-			});
-
-			fs.writeFileSync(pidFilePath, process.pid);
-		}
-
-		async.series([
-			Loader.init,
-			Loader.displayStartupMessages,
-			Loader.start,
-		], function (err) {
-			if (err) {
-				console.error('[loader] Error during startup');
-				throw err;
-			}
-		});
-	} else {
+fs.open(pathToConfig, 'r', function (err) {
+	if (err) {
 		// No config detected, kickstart web installer
 		fork('app');
+		return;
 	}
+
+	if (nconf.get('daemon') !== 'false' && nconf.get('daemon') !== false) {
+		if (file.existsSync(pidFilePath)) {
+			try {
+				var	pid = fs.readFileSync(pidFilePath, { encoding: 'utf-8' });
+				process.kill(pid, 0);
+				process.exit();
+			} catch (e) {
+				fs.unlinkSync(pidFilePath);
+			}
+		}
+
+		require('daemon')({
+			stdout: process.stdout,
+			stderr: process.stderr,
+			cwd: process.cwd(),
+		});
+
+		fs.writeFileSync(pidFilePath, process.pid);
+	}
+
+	async.series([
+		Loader.init,
+		Loader.displayStartupMessages,
+		Loader.start,
+	], function (err) {
+		if (err) {
+			console.error('[loader] Error during startup');
+			throw err;
+		}
+	});
 });

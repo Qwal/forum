@@ -28,7 +28,6 @@ describe('Controllers', function () {
 	var category;
 
 	before(function (done) {
-		groups.resetCache();
 		async.series({
 			category: function (next) {
 				categories.create({
@@ -61,6 +60,35 @@ describe('Controllers', function () {
 		});
 	});
 
+	it('should load /config with csrf_token', function (done) {
+		request({
+			url: nconf.get('url') + '/api/config',
+			json: true,
+		}, function (err, response, body) {
+			assert.ifError(err);
+			assert.equal(response.statusCode, 200);
+			assert(body.csrf_token);
+			done();
+		});
+	});
+
+	it('should load /config with no csrf_token as spider', function (done) {
+		request({
+			url: nconf.get('url') + '/api/config',
+			json: true,
+			headers: {
+				'user-agent': 'yandex',
+			},
+		}, function (err, response, body) {
+			assert.ifError(err);
+			assert.equal(response.statusCode, 200);
+			assert.strictEqual(body.csrf_token, false);
+			assert.strictEqual(body.uid, -1);
+			assert.strictEqual(body.loggedIn, false);
+			done();
+		});
+	});
+
 	describe('homepage', function () {
 		function hookMethod(hookData) {
 			assert(hookData.req);
@@ -72,15 +100,17 @@ describe('Controllers', function () {
 			});
 		}
 		var message = utils.generateUUID();
-		var tplPath = path.join(nconf.get('views_dir'), 'custom.tpl');
+		var name = 'custom.tpl';
+		var tplPath = path.join(nconf.get('views_dir'), name);
 
-		before(function () {
+		before(function (done) {
 			plugins.registerHook('myTestPlugin', {
 				hook: 'action:homepage.get:custom',
 				method: hookMethod,
 			});
 
 			fs.writeFileSync(tplPath, message);
+			meta.templates.compileTemplate(name, message, done);
 		});
 
 		it('should load default', function (done) {
@@ -217,7 +247,7 @@ describe('Controllers', function () {
 					assert.equal(res.statusCode, 200);
 					assert.ok(body);
 					assert.ok(body.indexOf('<main id="panel"'));
-					assert.ok(body.indexOf(message) !== -1);
+					assert.ok(body.includes(message));
 
 					done();
 				});
@@ -440,6 +470,15 @@ describe('Controllers', function () {
 		});
 	});
 
+	it('should load topics rss feed', function (done) {
+		request(nconf.get('url') + '/topics.rss', function (err, res, body) {
+			assert.ifError(err);
+			assert.equal(res.statusCode, 200);
+			assert(body);
+			done();
+		});
+	});
+
 	it('should load recent rss feed', function (done) {
 		request(nconf.get('url') + '/recent.rss', function (err, res, body) {
 			assert.ifError(err);
@@ -630,12 +669,25 @@ describe('Controllers', function () {
 		});
 	});
 
-	it('should load users search page', function (done) {
-		request(nconf.get('url') + '/users?term=bar&section=sort-posts', function (err, res, body) {
+	it('should error if guests do not have search privilege', function (done) {
+		request(nconf.get('url') + '/api/users?term=bar&section=sort-posts', { json: true }, function (err, res, body) {
 			assert.ifError(err);
-			assert.equal(res.statusCode, 200);
+			assert.equal(res.statusCode, 500);
 			assert(body);
+			assert.equal(body.error, '[[error:no-privileges]]');
 			done();
+		});
+	});
+
+	it('should load users search page', function (done) {
+		privileges.global.give(['search:users'], 'guests', function (err) {
+			assert.ifError(err);
+			request(nconf.get('url') + '/users?term=bar&section=sort-posts', function (err, res, body) {
+				assert.ifError(err);
+				assert.equal(res.statusCode, 200);
+				assert(body);
+				privileges.global.rescind(['search:users'], 'guests', done);
+			});
 		});
 	});
 
@@ -778,7 +830,11 @@ describe('Controllers', function () {
 			}, function (err, res, body) {
 				assert.ifError(err);
 				assert.equal(res.statusCode, 403);
-				assert.equal(body, '{"path":"/user/doesnotexist/session/1112233","loggedIn":true,"title":"[[global:403.title]]"}');
+				assert.deepEqual(JSON.parse(body), {
+					path: '/user/doesnotexist/session/1112233',
+					loggedIn: true,
+					title: '[[global:403.title]]',
+				});
 				done();
 			});
 		});
@@ -1029,7 +1085,7 @@ describe('Controllers', function () {
 				request(nconf.get('url') + '/me/bookmarks', { json: true }, function (err, res, body) {
 					assert.ifError(err);
 					assert.equal(res.statusCode, 200);
-					assert(body.indexOf('Login to your account') !== -1);
+					assert(body.includes('Login to your account'));
 					done();
 				});
 			});
@@ -1050,7 +1106,6 @@ describe('Controllers', function () {
 				done();
 			});
 		});
-
 
 		it('should load /user/foo/posts', function (done) {
 			request(nconf.get('url') + '/api/user/foo/posts', function (err, res, body) {
@@ -1126,6 +1181,78 @@ describe('Controllers', function () {
 
 		it('should load /user/foo/topics', function (done) {
 			request(nconf.get('url') + '/api/user/foo/topics', function (err, res, body) {
+				assert.ifError(err);
+				assert.equal(res.statusCode, 200);
+				assert(body);
+				done();
+			});
+		});
+
+		it('should load /user/foo/blocks', function (done) {
+			request(nconf.get('url') + '/api/user/foo/blocks', { jar: jar }, function (err, res, body) {
+				assert.ifError(err);
+				assert.equal(res.statusCode, 200);
+				assert(body);
+				done();
+			});
+		});
+
+		it('should load /user/foo/consent', function (done) {
+			request(nconf.get('url') + '/api/user/foo/consent', { jar: jar }, function (err, res, body) {
+				assert.ifError(err);
+				assert.equal(res.statusCode, 200);
+				assert(body);
+				done();
+			});
+		});
+
+		it('should load /user/foo/sessions', function (done) {
+			request(nconf.get('url') + '/api/user/foo/sessions', { jar: jar }, function (err, res, body) {
+				assert.ifError(err);
+				assert.equal(res.statusCode, 200);
+				assert(body);
+				done();
+			});
+		});
+
+		it('should load /user/foo/categories', function (done) {
+			request(nconf.get('url') + '/api/user/foo/categories', { jar: jar }, function (err, res, body) {
+				assert.ifError(err);
+				assert.equal(res.statusCode, 200);
+				assert(body);
+				done();
+			});
+		});
+
+		it('should load /user/foo/uploads', function (done) {
+			request(nconf.get('url') + '/api/user/foo/uploads', { jar: jar }, function (err, res, body) {
+				assert.ifError(err);
+				assert.equal(res.statusCode, 200);
+				assert(body);
+				done();
+			});
+		});
+
+		it('should export users posts', function (done) {
+			request(nconf.get('url') + '/api/user/uid/foo/export/posts', { jar: jar }, function (err, res, body) {
+				assert.ifError(err);
+				assert.equal(res.statusCode, 200);
+				assert(body);
+				done();
+			});
+		});
+
+		it('should export users uploads', function (done) {
+			request(nconf.get('url') + '/api/user/uid/foo/export/uploads', { jar: jar }, function (err, res, body) {
+				assert.ifError(err);
+				assert.equal(res.statusCode, 200);
+				assert(body);
+				done();
+			});
+		});
+
+		it('should export users profile', function (done) {
+			request(nconf.get('url') + '/api/user/uid/foo/export/profile', { jar: jar }, function (err, res, body) {
 				assert.ifError(err);
 				assert.equal(res.statusCode, 200);
 				assert(body);
@@ -1324,7 +1451,7 @@ describe('Controllers', function () {
 						var contents = body.posts.map(function (p) {
 							return p.content;
 						});
-						assert(contents.indexOf('1st reply') === -1);
+						assert(!contents.includes('1st reply'));
 						done();
 					});
 				},
@@ -1336,13 +1463,17 @@ describe('Controllers', function () {
 				name: 'selectedGroup',
 			}, function (err) {
 				assert.ifError(err);
-				groups.join('selectedGroup', fooUid, function (err) {
+				user.create({ username: 'groupie' }, function (err, uid) {
 					assert.ifError(err);
-					request(nconf.get('url') + '/api/user/foo', { json: true }, function (err, res, body) {
+					groups.join('selectedGroup', uid, function (err) {
 						assert.ifError(err);
-						assert.equal(res.statusCode, 200);
-						assert(body.selectedGroup.name, 'selectedGroup');
-						done();
+						request(nconf.get('url') + '/api/user/groupie', { json: true }, function (err, res, body) {
+							assert.ifError(err);
+							assert.equal(res.statusCode, 200);
+							assert(Array.isArray(body.selectedGroup));
+							assert.equal(body.selectedGroup[0].name, 'selectedGroup');
+							done();
+						});
 					});
 				});
 			});
@@ -1520,6 +1651,7 @@ describe('Controllers', function () {
 	it('should return osd data', function (done) {
 		request(nconf.get('url') + '/osd.xml', function (err, res, body) {
 			assert.ifError(err);
+			assert.equal(res.statusCode, 200);
 			assert(body);
 			done();
 		});
@@ -1535,6 +1667,7 @@ describe('Controllers', function () {
 		it('should handle topic malformed uri', function (done) {
 			request(nconf.get('url') + '/topic/1/a%AFc', function (err, res, body) {
 				assert.ifError(err);
+				assert.equal(res.statusCode, 200);
 				assert(body);
 				done();
 			});
@@ -1543,6 +1676,7 @@ describe('Controllers', function () {
 		it('should handle category malformed uri', function (done) {
 			request(nconf.get('url') + '/category/1/a%AFc', function (err, res, body) {
 				assert.ifError(err);
+				assert.equal(res.statusCode, 200);
 				assert(body);
 				done();
 			});
@@ -1668,16 +1802,23 @@ describe('Controllers', function () {
 			request(nconf.get('url') + '/assets/vendor/jquery/timeago/locales/jquery.timeago.af.js', function (err, res, body) {
 				assert.ifError(err);
 				assert.equal(res.statusCode, 200);
-				assert(body.indexOf('Afrikaans') !== -1);
+				assert(body.includes('Afrikaans'));
 				done();
 			});
 		});
 
-		it('should load timeago locale', function (done) {
-			request(nconf.get('url') + '/assets/vendor/jquery/timeago/locales/jquery.timeago.404.js', function (err, res, body) {
+		it('should return not found if NodeBB language exists but timeago locale does not exist', function (done) {
+			request(nconf.get('url') + '/assets/vendor/jquery/timeago/locales/jquery.timeago.ms.js', function (err, res, body) {
 				assert.ifError(err);
-				assert.equal(res.statusCode, 200);
-				assert(body.indexOf('English') !== -1);
+				assert.equal(res.statusCode, 404);
+				done();
+			});
+		});
+
+		it('should return not found if NodeBB language does not exist', function (done) {
+			request(nconf.get('url') + '/assets/vendor/jquery/timeago/locales/jquery.timeago.muggle.js', function (err, res, body) {
+				assert.ifError(err);
+				assert.equal(res.statusCode, 404);
 				done();
 			});
 		});
@@ -1966,7 +2107,7 @@ describe('Controllers', function () {
 		});
 
 		it('should 404 if filter is invalid', function (done) {
-			request(nconf.get('url') + '/api/unread/doesnotexist/total', { jar: jar }, function (err, res) {
+			request(nconf.get('url') + '/api/unread/total?filter=doesnotexist', { jar: jar }, function (err, res) {
 				assert.ifError(err);
 				assert.equal(res.statusCode, 404);
 				done();
@@ -1974,7 +2115,7 @@ describe('Controllers', function () {
 		});
 
 		it('should return total unread count', function (done) {
-			request(nconf.get('url') + '/api/unread/new/total', { jar: jar }, function (err, res, body) {
+			request(nconf.get('url') + '/api/unread/total?filter=new', { jar: jar }, function (err, res, body) {
 				assert.ifError(err);
 				assert.equal(res.statusCode, 200);
 				assert.equal(body, 0);
@@ -2006,7 +2147,7 @@ describe('Controllers', function () {
 			request(nconf.get('url') + '//admin/advanced/database', { json: true }, function (err, res, body) {
 				assert.ifError(err);
 				assert.equal(res.statusCode, 200);
-				assert(body.indexOf('Login to your account') !== -1);
+				assert(body.includes('Login to your account'));
 				done();
 			});
 		});
@@ -2039,7 +2180,7 @@ describe('Controllers', function () {
 				assert.equal(res.statusCode, 200);
 				assert(body.title);
 				assert(body.template);
-				assert.equal(body.url, '/compose');
+				assert.equal(body.url, nconf.get('relative_path') + '/compose');
 				done();
 			});
 		});
@@ -2060,7 +2201,7 @@ describe('Controllers', function () {
 				assert.equal(res.statusCode, 200);
 				assert(body.title);
 				assert.strictEqual(body.template.name, '');
-				assert.strictEqual(body.url, '/compose');
+				assert.strictEqual(body.url, nconf.get('relative_path') + '/compose');
 
 				plugins.unregisterHook('myTestPlugin', 'filter:composer.build', hookMethod);
 				done();
@@ -2080,7 +2221,6 @@ describe('Controllers', function () {
 			request(nconf.get('url') + '/api/compose', { json: true }, function (err, res, body) {
 				assert.ifError(err);
 				assert.equal(res.statusCode, 404);
-				console.log(body);
 
 				plugins.unregisterHook('myTestPlugin', 'filter:composer.build', hookMethod);
 				done();

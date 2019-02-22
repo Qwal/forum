@@ -17,7 +17,7 @@ var Digest = module.exports;
 Digest.execute = function (payload, callback) {
 	callback = callback || function () {};
 
-	var digestsDisabled = parseInt(meta.config.disableEmailSubscriptions, 10) === 1;
+	var digestsDisabled = meta.config.disableEmailSubscriptions === 1;
 	if (digestsDisabled) {
 		winston.info('[user/jobs] Did not send digests (' + payload.interval + ') because subscription system is disabled.');
 		return callback();
@@ -158,7 +158,13 @@ Digest.send = function (data, callback) {
 	function getTermTopics(term, uid, start, stop, callback) {
 		async.waterfall([
 			function (next) {
-				topics.getPopularTopics(term, uid, start, stop, next);
+				topics.getSortedTopics({
+					uid: uid,
+					start: start,
+					stop: stop,
+					term: term,
+					sort: 'posts',
+				}, next);
 			},
 			function (data, next) {
 				if (!data.topics.length) {

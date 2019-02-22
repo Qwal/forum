@@ -14,6 +14,7 @@ var userDigest = require('../user/digest');
 var userEmail = require('../user/email');
 var logger = require('../logger');
 var events = require('../events');
+var notifications = require('../notifications');
 var emailer = require('../emailer');
 var db = require('../database');
 var analytics = require('../analytics');
@@ -58,17 +59,26 @@ SocketAdmin.before = function (socket, method, data, next) {
 	], next);
 };
 
-SocketAdmin.reload = function (socket, data, callback) {
+SocketAdmin.restart = function (socket, data, callback) {
+	logRestart(socket);
+	meta.restart();
+	callback();
+};
+
+function logRestart(socket) {
 	events.log({
 		type: 'restart',
 		uid: socket.uid,
 		ip: socket.ip,
 	});
-	meta.restart();
-	callback();
-};
+	db.setObject('lastrestart', {
+		uid: socket.uid,
+		ip: socket.ip,
+		timestamp: Date.now(),
+	});
+}
 
-SocketAdmin.restart = function (socket, data, callback) {
+SocketAdmin.reload = function (socket, data, callback) {
 	async.waterfall([
 		function (next) {
 			require('../meta/build').buildAll(next);
@@ -80,12 +90,7 @@ SocketAdmin.restart = function (socket, data, callback) {
 				ip: socket.ip,
 			});
 
-			events.log({
-				type: 'restart',
-				uid: socket.uid,
-				ip: socket.ip,
-			});
-
+			logRestart(socket);
 			meta.restart();
 			next();
 		},
@@ -174,6 +179,15 @@ SocketAdmin.config.setMultiple = function (socket, data, callback) {
 		return callback(new Error('[[error:invalid-data]]'));
 	}
 
+	var changes = {};
+	data = meta.configs.deserialize(data);
+	Object.keys(data).forEach(function (key) {
+		if (data[key] !== meta.config[key]) {
+			changes[key] = data[key];
+			changes[key + '_old'] = meta.config[key];
+		}
+	});
+
 	async.waterfall([
 		function (next) {
 			meta.configs.setMultiple(data, next);
@@ -190,10 +204,15 @@ SocketAdmin.config.setMultiple = function (socket, data, callback) {
 					logger.monitorConfig({ io: index.server }, setting);
 				}
 			}
-			data.type = 'config-change';
-			data.uid = socket.uid;
-			data.ip = socket.ip;
-			events.log(data, next);
+
+			if (Object.keys(changes).length) {
+				changes.type = 'config-change';
+				changes.uid = socket.uid;
+				changes.ip = socket.ip;
+				events.log(changes, next);
+			} else {
+				next();
+			}
 		},
 	], callback);
 };
@@ -229,7 +248,7 @@ SocketAdmin.settings.clearSitemapCache = function (socket, data, callback) {
 
 SocketAdmin.email.test = function (socket, data, callback) {
 	var payload = {
-		subject: 'Test Email',
+		subject: '[[email:test-email.subject]]',
 	};
 
 	switch (data.template) {
@@ -255,6 +274,30 @@ SocketAdmin.email.test = function (socket, data, callback) {
 		}, callback);
 		break;
 
+	case 'notification':
+		async.waterfall([
+			function (next) {
+				notifications.create({
+					type: 'test',
+					bodyShort: '[[admin-settings-email:testing]]',
+					bodyLong: '[[admin-settings-email:testing.send-help]]',
+					nid: 'uid:' + socket.uid + ':test',
+					path: '/',
+					from: socket.uid,
+				}, next);
+			},
+			function (notifObj, next) {
+				emailer.send('notification', socket.uid, {
+					path: notifObj.path,
+					subject: utils.stripHTMLTags(notifObj.subject || '[[notifications:new_notification]]'),
+					intro: utils.stripHTMLTags(notifObj.bodyShort),
+					body: notifObj.bodyLong || '',
+					notification: notifObj,
+					showUnsubscribe: true,
+				}, next);
+			},
+		]);
+		break;
 	default:
 		emailer.send(data.template, socket.uid, payload, callback);
 		break;
@@ -274,22 +317,23 @@ SocketAdmin.analytics.get = function (socket, data, callback) {
 			data.amount = 24;
 		}
 	}
-
+	const getStats = data.units === 'days' ? analytics.getDailyStatsForSet : analytics.getHourlyStatsForSet;
 	if (data.graph === 'traffic') {
 		async.parallel({
 			uniqueVisitors: function (next) {
-				if (data.units === 'days') {
-					analytics.getDailyStatsForSet('analytics:uniquevisitors', data.until || Date.now(), data.amount, next);
-				} else {
-					analytics.getHourlyStatsForSet('analytics:uniquevisitors', data.until || Date.now(), data.amount, next);
-				}
+				getStats('analytics:uniquevisitors', data.until || Date.now(), data.amount, next);
 			},
 			pageviews: function (next) {
-				if (data.units === 'days') {
-					analytics.getDailyStatsForSet('analytics:pageviews', data.until || Date.now(), data.amount, next);
-				} else {
-					analytics.getHourlyStatsForSet('analytics:pageviews', data.until || Date.now(), data.amount, next);
-				}
+				getStats('analytics:pageviews', data.until || Date.now(), data.amount, next);
+			},
+			pageviewsRegistered: function (next) {
+				getStats('analytics:pageviews:registered', data.until || Date.now(), data.amount, next);
+			},
+			pageviewsGuest: function (next) {
+				getStats('analytics:pageviews:guest', data.until || Date.now(), data.amount, next);
+			},
+			pageviewsBot: function (next) {
+				getStats('analytics:pageviews:bot', data.until || Date.now(), data.amount, next);
 			},
 			summary: function (next) {
 				analytics.getSummary(next);
@@ -312,6 +356,10 @@ SocketAdmin.logs.clear = function (socket, data, callback) {
 
 SocketAdmin.errors.clear = function (socket, data, callback) {
 	meta.errors.clear(callback);
+};
+
+SocketAdmin.deleteEvents = function (socket, eids, callback) {
+	events.deleteEvents(eids, callback);
 };
 
 SocketAdmin.deleteAllEvents = function (socket, data, callback) {

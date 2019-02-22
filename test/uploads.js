@@ -15,6 +15,8 @@ var privileges = require('../src/privileges');
 var meta = require('../src/meta');
 var socketUser = require('../src/socket.io/user');
 var helpers = require('./helpers');
+var file = require('../src/file');
+var image = require('../src/image');
 
 describe('Upload Controllers', function () {
 	var tid;
@@ -87,15 +89,36 @@ describe('Upload Controllers', function () {
 			});
 		});
 
-		it('should resize and upload an image to a post', function (done) {
-			var oldValue = meta.config.maximumImageWidth;
-			meta.config.maximumImageWidth = 10;
+		it('should upload an image to a post and then delete the upload', function (done) {
 			helpers.uploadFile(nconf.get('url') + '/api/post/upload', path.join(__dirname, '../test/files/test.png'), {}, jar, csrf_token, function (err, res, body) {
 				assert.ifError(err);
 				assert.equal(res.statusCode, 200);
 				assert(Array.isArray(body));
 				assert(body[0].url);
-				meta.config.maximumImageWidth = oldValue;
+				var name = body[0].url.replace(nconf.get('relative_path') + nconf.get('upload_url'), '');
+				socketUser.deleteUpload({ uid: regularUid }, { uid: regularUid, name: name }, function (err) {
+					assert.ifError(err);
+					db.getSortedSetRange('uid:' + regularUid + ':uploads', 0, -1, function (err, uploads) {
+						assert.ifError(err);
+						assert.equal(uploads.includes(name), false);
+						done();
+					});
+				});
+			});
+		});
+
+		it('should resize and upload an image to a post', function (done) {
+			var oldValue = meta.config.resizeImageWidth;
+			meta.config.resizeImageWidth = 10;
+			meta.config.resizeImageWidthThreshold = 10;
+			helpers.uploadFile(nconf.get('url') + '/api/post/upload', path.join(__dirname, '../test/files/test.png'), {}, jar, csrf_token, function (err, res, body) {
+				assert.ifError(err);
+				assert.equal(res.statusCode, 200);
+				assert(Array.isArray(body));
+				assert(body[0].url);
+				assert(body[0].url.match(/\/assets\/uploads\/files\/\d+-test-resized\.png/));
+				meta.config.resizeImageWidth = oldValue;
+				meta.config.resizeImageWidthThreshold = 1520;
 				done();
 			});
 		});
@@ -111,6 +134,45 @@ describe('Upload Controllers', function () {
 				assert.equal(res.statusCode, 200);
 				assert(Array.isArray(body));
 				assert(body[0].url);
+				done();
+			});
+		});
+
+		it('should fail to upload image to post if image dimensions are too big', function (done) {
+			helpers.uploadFile(nconf.get('url') + '/api/post/upload', path.join(__dirname, '../test/files/toobig.jpg'), {}, jar, csrf_token, function (err, res, body) {
+				assert.ifError(err);
+				assert.equal(res.statusCode, 500);
+				assert(body.error, '[[error:invalid-image-dimensions]]');
+				done();
+			});
+		});
+
+		it('should fail to upload image to post if image is broken', function (done) {
+			helpers.uploadFile(nconf.get('url') + '/api/post/upload', path.join(__dirname, '../test/files/brokenimage.png'), {}, jar, csrf_token, function (err, res, body) {
+				assert.ifError(err);
+				assert.equal(res.statusCode, 500);
+				assert(body.error, 'invalid block type');
+				done();
+			});
+		});
+
+		it('should fail if file is not an image', function (done) {
+			file.isFileTypeAllowed(path.join(__dirname, '../test/files/notanimage.png'), function (err) {
+				assert.equal(err.message, 'Input file contains unsupported image format');
+				done();
+			});
+		});
+
+		it('should fail if file is not an image', function (done) {
+			image.size(path.join(__dirname, '../test/files/notanimage.png'), function (err) {
+				assert.equal(err.message, 'Input file contains unsupported image format');
+				done();
+			});
+		});
+
+		it('should fail if file is missing', function (done) {
+			image.size(path.join(__dirname, '../test/files/doesnotexist.png'), function (err) {
+				assert.equal(err.message, 'Input file is missing');
 				done();
 			});
 		});
@@ -158,6 +220,41 @@ describe('Upload Controllers', function () {
 				assert.equal(err.message, '[[error:invalid-image]]');
 				done();
 			});
+		});
+
+		it('should delete users uploads if account is deleted', function (done) {
+			var jar;
+			var uid;
+			var url;
+			var file = require('../src/file');
+
+			async.waterfall([
+				function (next) {
+					user.create({ username: 'uploader', password: 'barbar' }, next);
+				},
+				function (_uid, next) {
+					uid = _uid;
+					helpers.loginUser('uploader', 'barbar', next);
+				},
+				function (jar, csrf_token, next) {
+					helpers.uploadFile(nconf.get('url') + '/api/post/upload', path.join(__dirname, '../test/files/test.png'), {}, jar, csrf_token, next);
+				},
+				function (res, body, next) {
+					assert(body);
+					assert(body[0].url);
+					url = body[0].url;
+
+					user.delete(1, uid, next);
+				},
+				function (userData, next) {
+					var filePath = path.join(nconf.get('upload_path'), url.replace('/assets/uploads', ''));
+					file.exists(filePath, next);
+				},
+				function (exists, next) {
+					assert(!exists);
+					done();
+				},
+			], done);
 		});
 	});
 

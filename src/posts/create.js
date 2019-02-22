@@ -49,7 +49,7 @@ module.exports = function (Posts) {
 					postData.toPid = data.toPid;
 				}
 
-				if (data.ip && parseInt(meta.config.trackIpPerPost, 10) === 1) {
+				if (data.ip && meta.config.trackIpPerPost) {
 					postData.ip = data.ip;
 				}
 
@@ -57,9 +57,6 @@ module.exports = function (Posts) {
 					postData.handle = data.handle;
 				}
 
-				plugins.fireHook('filter:post.save', postData, next);
-			},
-			function (postData, next) {
 				plugins.fireHook('filter:post.create', { post: postData, data: data }, next);
 			},
 			function (data, next) {
@@ -101,6 +98,7 @@ module.exports = function (Posts) {
 					function (next) {
 						db.incrObjectField('global', 'postCount', next);
 					},
+					async.apply(Posts.uploads.sync, postData.pid),
 				], function (err) {
 					next(err);
 				});
@@ -116,4 +114,3 @@ module.exports = function (Posts) {
 		], callback);
 	};
 };
-

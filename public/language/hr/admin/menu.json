@@ -57,13 +57,14 @@
 	"section-advanced": "Napredno",
 	"advanced/database": "Baza podataka",
 	"advanced/events": "Događanja",
+	"advanced/hooks": "Hooks",
 	"advanced/logs": "Dnevnik",
 	"advanced/errors": "Greške",
 	"advanced/cache": "Cache",
 	"development/logger": "Dnevnik",
 	"development/info": "Info",
 
-	"reload-forum": "Ponovno učitaj forum",
+	"rebuild-and-restart-forum": "Rebuild & Restart Forum",
 	"restart-forum": "ponovno pokreni forum",
 	"logout": "Odjava",
 	"view-forum": "Pogledaj forum",
@@ -74,5 +75,8 @@
 	"search.keep-typing": "Upiši više da vidiš rezultate ...",
 	"search.start-typing": "Počni pisati da bi vidio rezultate...",
 
-	"connection-lost": "Veza sa %1 je prekinuta, pokušavam se spojiti ..."
+	"connection-lost": "Veza sa %1 je prekinuta, pokušavam se spojiti ...",
+
+	"alerts.version": "Running <strong>NodeBB v%1</strong>",
+	"alerts.upgrade": "Upgrade to v%1"
 }

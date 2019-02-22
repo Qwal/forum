@@ -11,10 +11,10 @@ var widgets = require('../widgets');
 var utils = require('../utils');
 
 module.exports = function (middleware) {
-	middleware.processRender = function (req, res, next) {
+	middleware.processRender = function processRender(req, res, next) {
 		// res.render post-processing, modified from here: https://gist.github.com/mrlannigan/5051687
 		var render = res.render;
-		res.render = function (template, options, fn) {
+		res.render = function renderOverride(template, options, fn) {
 			var self = this;
 			var req = this.req;
 			var defaultFn = function (err, str) {
@@ -34,9 +34,10 @@ module.exports = function (middleware) {
 			}
 
 			var ajaxifyData;
+			var templateToRender;
 			async.waterfall([
 				function (next) {
-					options.loggedIn = !!req.uid;
+					options.loggedIn = req.uid > 0;
 					options.relative_path = nconf.get('relative_path');
 					options.template = { name: template };
 					options.template[template] = true;
@@ -45,6 +46,7 @@ module.exports = function (middleware) {
 					plugins.fireHook('filter:' + template + '.build', { req: req, res: res, templateData: options }, next);
 				},
 				function (data, next) {
+					templateToRender = data.templateData.templateToRender || template;
 					plugins.fireHook('filter:middleware.render', { req: req, res: res, templateData: data.templateData }, next);
 				},
 				function (data, next) {
@@ -68,7 +70,7 @@ module.exports = function (middleware) {
 						if (req.route && req.route.path === '/api/') {
 							options.title = '[[pages:home]]';
 						}
-
+						req.app.set('json spaces', global.env === 'development' || req.query.pretty ? 4 : 0);
 						return res.json(options);
 					}
 
@@ -79,7 +81,7 @@ module.exports = function (middleware) {
 							renderHeaderFooter('renderHeader', req, res, options, next);
 						},
 						content: function (next) {
-							render.call(self, template, options, next);
+							render.call(self, templateToRender, options, next);
 						},
 						footer: function (next) {
 							renderHeaderFooter('renderFooter', req, res, options, next);
@@ -133,7 +135,7 @@ module.exports = function (middleware) {
 		var parts = clean.split('/').slice(0, 3);
 		parts.forEach(function (p, index) {
 			try {
-				p = decodeURIComponent(p);
+				p = utils.slugify(decodeURIComponent(p));
 			} catch (err) {
 				winston.error(err);
 				p = '';
