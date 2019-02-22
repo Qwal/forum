@@ -1,2 +1,2 @@
 define("ace/snippets/scad",["require","exports","module"],function(e,s,t){"use strict";s.snippetText="",s.scope="scad"});(function(){window.require(["ace/snippets/scad"],function(e){if(typeof module=="object"){module.exports=e}})})();
-//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/scad.js.map
+//# sourceMappingURL=scad.js.map

@@ -1,2 +1,2 @@
 define("ace/snippets/json",["require","exports","module"],function(e,o,n){"use strict";o.snippetText="",o.scope="json"});(function(){window.require(["ace/snippets/json"],function(e){if(typeof module=="object"){module.exports=e}})})();
-//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/json.js.map
+//# sourceMappingURL=json.js.map

@@ -16,13 +16,6 @@
 		<form role="form">
 			<div class="checkbox">
 				<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
-					<input class="mdl-switch__input" type="checkbox" data-field="allowLocalLogin" checked>
-					<span class="mdl-switch__label"><strong>[[admin/settings/user:allow-local-login]]</strong></span>
-				</label>
-			</div>
-
-			<div class="checkbox">
-				<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
 					<input class="mdl-switch__input" type="checkbox" data-field="requireEmailConfirmation">
 					<span class="mdl-switch__label"><strong>[[admin/settings/user:require-email-confirmation]]</strong></span>
 				</label>
@@ -51,6 +44,13 @@
 	<div class="col-sm-2 col-xs-12 settings-header">[[admin/settings/user:account-settings]]</div>
 	<div class="col-sm-10 col-xs-12">
 		<form>
+			<div class="checkbox">
+				<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
+					<input class="mdl-switch__input" type="checkbox" data-field="gdpr_enabled">
+					<span class="mdl-switch__label"><strong>[[admin/settings/user:gdpr_enabled]]</strong></span>
+				</label>
+				<p class="help-block">[[admin/settings/user:gdpr_enabled_help]]</p>
+			</div>
 			<div class="checkbox">
 				<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
 					<input class="mdl-switch__input" type="checkbox" data-field="username:disableEdit">
@@ -143,17 +143,33 @@
 
 <div class="row">
 	<div class="col-sm-2 col-xs-12 settings-header">
-		Session time
+		[[admin/settings/user:session-time]]
 	</div>
 	<div class="col-sm-10 col-xs-12">
 		<form>
+			<div class="row">
+				<div class="col-sm-6">
+					<div class="form-group">
+						<label>[[admin/settings/user:session-time-days]]</label>
+						<input type="text" class="form-control" data-field="loginDays" placeholder="[[admin/settings/user:session-time-days]]" />
+					</div>
+				</div>
+				<div class="col-sm-6">
+					<div class="form-group">
+						<label>[[admin/settings/user:session-time-seconds]]</label>
+						<input type="text" class="form-control" data-field="loginSeconds" placeholder="[[admin/settings/user:session-time-seconds]]" />
+					</div>
+				</div>
+				<div class="col-xs-12">
+					<p class="help-block">
+						[[admin/settings/user:session-time-help]]
+					</p>
+				</div>
+			</div>
 			<div class="form-group">
-				<label>Days: </label>
-				<input type="text" class="form-control" data-field="loginDays" placeholder="Days" />
-				<label>Seconds: </label>
-				<input type="text" class="form-control" data-field="loginSeconds" placeholder="Seconds" />
-				<p class="help-block">Note that only one of these values will be used. If there is no <i>seconds</i> value we fall back to <i>days</i>. If
-					there is no <i>days</i> value we default to <i>14 days</i>.</p>
+				<label>[[admin/settings/user:online-cutoff]]</label>
+				<input type="text" class="form-control" data-field="onlineCutoff">
+				<p class="help-block">[[admin/settings/user:online-cutoff-help]]</p>
 			</div>
 		</form>
 	</div>
@@ -301,13 +317,24 @@
 				</label>
 			</div>
 
+			<div class="form-group">
+				<label>[[admin/settings/user:categoryWatchState]]</label>
+				<select class="form-control" data-field="categoryWatchState">
+					<option value="watching">[[admin/settings/user:categoryWatchState.watching]]</option>
+					<option value="notwatching">[[admin/settings/user:categoryWatchState.notwatching]]</option>
+					<option value="ignoring">[[admin/settings/user:categoryWatchState.ignoring]]</option>
+				</select>
+			</div>
+
 			<label>[[admin/settings/user:default-notification-settings]]</label>
+
+			<!-- BEGIN notificationSettings -->
 			<div class="row">
 				<div class="form-group col-xs-7">
-					<label>[[notifications:notificationType_upvote]]</label>
+					<label>{notificationSettings.label}</label>
 				</div>
 				<div class="form-group col-xs-5">
-					<select class="form-control" data-field="notificationType_upvote">
+					<select class="form-control" data-field="{notificationSettings.name}">
 						<option value="none">[[notifications:none]]</option>
 						<option value="notification">[[notifications:notification_only]]</option>
 						<option value="email">[[notifications:email_only]]</option>
@@ -315,71 +342,8 @@
 					</select>
 				</div>
 			</div>
-			<div class="row">
-				<div class="form-group col-xs-7">
-					<label>[[notifications:notificationType_new-topic]]</label>
-				</div>
-				<div class="form-group col-xs-5">
-					<select class="form-control" data-field="notificationType_new-topic">
-						<option value="none">[[notifications:none]]</option>
-						<option value="notification">[[notifications:notification_only]]</option>
-						<option value="email">[[notifications:email_only]]</option>
-						<option value="notificationemail">[[notifications:notification_and_email]]</option>
-					</select>
-				</div>
-			</div>
-			<div class="row">
-				<div class="form-group col-xs-7">
-					<label>[[notifications:notificationType_new-reply]]</label>
-				</div>
-				<div class="form-group col-xs-5">
-					<select class="form-control" data-field="notificationType_new-reply">
-						<option value="none">[[notifications:none]]</option>
-						<option value="notification">[[notifications:notification_only]]</option>
-						<option value="email">[[notifications:email_only]]</option>
-						<option value="notificationemail">[[notifications:notification_and_email]]</option>
-					</select>
-				</div>
-			</div>
-			<div class="row">
-				<div class="form-group col-xs-7">
-					<label>[[notifications:notificationType_follow]]</label>
-				</div>
-				<div class="form-group col-xs-5">
-					<select class="form-control" data-field="notificationType_follow">
-						<option value="none">[[notifications:none]]</option>
-						<option value="notification">[[notifications:notification_only]]</option>
-						<option value="email">[[notifications:email_only]]</option>
-						<option value="notificationemail">[[notifications:notification_and_email]]</option>
-					</select>
-				</div>
-			</div>
-			<div class="row">
-				<div class="form-group col-xs-7">
-					<label>[[notifications:notificationType_new-chat]]</label>
-				</div>
-				<div class="form-group col-xs-5">
-					<select class="form-control" data-field="notificationType_new-chat">
-						<option value="none">[[notifications:none]]</option>
-						<option value="notification">[[notifications:notification_only]]</option>
-						<option value="email">[[notifications:email_only]]</option>
-						<option value="notificationemail">[[notifications:notification_and_email]]</option>
-					</select>
-				</div>
-			</div>
-			<div class="row">
-				<div class="form-group col-xs-7">
-					<label>[[notifications:notificationType_group-invite]]</label>
-				</div>
-				<div class="form-group col-xs-5">
-					<select class="form-control" data-field="notificationType_group-invite">
-						<option value="none">[[notifications:none]]</option>
-						<option value="notification">[[notifications:notification_only]]</option>
-						<option value="email">[[notifications:email_only]]</option>
-						<option value="notificationemail">[[notifications:notification_and_email]]</option>
-					</select>
-				</div>
-			</div>
+			<!-- END notificationSettings -->
+
 		</form>
 	</div>
 </div>

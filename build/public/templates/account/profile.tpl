@@ -45,6 +45,7 @@
 		<i class="fa fa-ellipsis-v"></i>
 	</button>
 	<ul class="dropdown-menu dropdown-menu-right">
+		<!-- IF loggedIn -->
 		<!-- IF !isSelf -->
 		<!-- IF !banned -->
 		<!-- IF !config.disableChat -->
@@ -58,15 +59,19 @@
 		<li>
 			<a component="account/flag" href="#">[[user:flag-profile]]</a>
 		</li>
+		<li>
+			<a component="account/block" href="#"><!-- IF !../isBlocked -->[[user:block_user]]<!-- ELSE -->[[user:unblock_user]]<!-- END --></a>
+		</li>
 		<li class="divider"></li>
 		<!-- ENDIF !banned -->
 		<!-- ENDIF !isSelf -->
+		<!-- ENDIF loggedIn -->
 		<li>
 			<a href="{config.relative_path}/user/{userslug}" class="inline-block" id="profile">[[user:profile]]</a>
 		</li>
 		<!-- IF showHidden -->
-		<li><a href="{config.relative_path}/user/{userslug}/settings">[[user:settings]]</a></li>
 		<li><a href="{config.relative_path}/user/{userslug}/edit">[[user:edit]]</a></li>
+		<li><a href="{config.relative_path}/user/{userslug}/settings">[[user:settings]]</a></li>
 		<!-- ENDIF showHidden -->
 
 		<!-- IF !isSelf -->
@@ -88,6 +93,9 @@
 		<li class="divider"></li>
 		<li><a href="{config.relative_path}/user/{userslug}/following">[[user:following]]</a></li>
 		<li><a href="{config.relative_path}/user/{userslug}/followers">[[user:followers]]</a></li>
+		<!-- IF showHidden -->
+		<li><a href="{config.relative_path}/user/{userslug}/blocks">[[user:blocks]]</a></li>
+		<!-- ENDIF showHidden -->
 		<li class="divider"></li>
 		<li><a href="{config.relative_path}/user/{userslug}/topics">[[global:topics]]</a></li>
 		<li><a href="{config.relative_path}/user/{userslug}/posts">[[global:posts]]</a></li>
@@ -97,6 +105,7 @@
 		<li><a href="{config.relative_path}/user/{userslug}/groups">[[global:header.groups]]</a></li>
 
 		<!-- IF showHidden -->
+		<li><a href="{config.relative_path}/user/{userslug}/categories">[[user:watched_categories]]</a></li>
 		<li><a href="{config.relative_path}/user/{userslug}/bookmarks">[[user:bookmarks]]</a></li>
 		<li><a href="{config.relative_path}/user/{userslug}/watched">[[user:watched]]</a></li>
 		<li><a href="{config.relative_path}/user/{userslug}/ignored">[[user:ignored]]</a></li>
@@ -106,6 +115,7 @@
 		<li><a href="{config.relative_path}/user/{userslug}/downvoted">[[global:downvoted]]</a></li>
 		<!-- ENDIF !downvote:disabled -->
 		<!-- ENDIF !reputation:disabled -->
+		<li><a href="{config.relative_path}/user/{userslug}/uploads">[[global:uploads]]</a></li>
 		<!-- ENDIF showHidden -->
 
 		<!-- BEGIN profile_links -->
@@ -118,7 +128,8 @@
 </div>
 
 
-		<!-- IF showHidden -->
+		<!-- IF allowCoverPicture -->
+		<!-- IF canEdit -->
 		<div class="controls">
 			<span class="upload"><i class="fa fa-fw fa-4x fa-upload"></i></span>
 			<span class="resize"><i class="fa fa-fw fa-4x fa-arrows"></i></span>
@@ -126,7 +137,8 @@
 		</div>
 		<div class="save">[[groups:cover-save]] <i class="fa fa-fw fa-floppy-o"></i></div>
 		<div class="indicator">[[groups:cover-saving]] <i class="fa fa-fw fa-refresh fa-spin"></i></div>
-		<!-- ENDIF showHidden -->
+		<!-- ENDIF canEdit -->
+		<!-- ENDIF allowCoverPicture -->
 	</div>
 </div>
 
@@ -146,12 +158,16 @@
 		<!-- ENDIF banned -->
 		<!-- ENDIF isAdminOrGlobalModeratorOrModerator -->
 
-		<!-- IF selectedGroup.slug -->
+		<!-- IF selectedGroup.length -->
 		<div class="text-center">
+		<!-- BEGIN selectedGroup -->
+		<!-- IF selectedGroup.slug -->
 			<a href="{config.relative_path}/groups/{selectedGroup.slug}"><small class="label group-label inline-block" style="background-color: {selectedGroup.labelColor};"><!-- IF selectedGroup.icon --><i class="fa {selectedGroup.icon}"></i> <!-- ENDIF selectedGroup.icon -->{selectedGroup.userTitle}</small></a>
+		<!-- ENDIF selectedGroup.slug -->
+		<!-- END selectedGroup -->
 		</div>
 		<br/>
-		<!-- ENDIF selectedGroup.slug -->
+		<!-- ENDIF selectedGroup.length -->
 
 		<!-- IF aboutme -->
 		<span component="aboutme" class="text-center aboutme">{aboutme}</span>
@@ -200,7 +216,7 @@
 
 			<!-- IF websiteName -->
 			<span>[[user:website]]</span>
-			<strong><a href="{websiteLink}" rel="nofollow">{websiteName}</a></strong>
+			<strong><a href="{websiteLink}" rel="nofollow noopener noreferrer">{websiteName}</a></strong>
 			<!-- ENDIF websiteName -->
 
 			<!-- IF location -->

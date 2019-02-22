@@ -1,2 +1,2 @@
 define("ace/snippets/xml",["require","exports","module"],function(e,t,i){"use strict";t.snippetText="",t.scope="xml"});(function(){window.require(["ace/snippets/xml"],function(e){if(typeof module=="object"){module.exports=e}})})();
-//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/xml.js.map
+//# sourceMappingURL=xml.js.map

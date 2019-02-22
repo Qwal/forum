@@ -1,2 +1,2 @@
 define("ace/snippets/text",["require","exports","module"],function(e,t,i){"use strict";t.snippetText="",t.scope="text"});(function(){window.require(["ace/snippets/text"],function(e){if(typeof module=="object"){module.exports=e}})})();
-//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/text.js.map
+//# sourceMappingURL=text.js.map

@@ -1,2 +1,2 @@
 define("ace/snippets/csharp",["require","exports","module"],function(e,p,s){"use strict";p.snippetText="",p.scope="csharp"});(function(){window.require(["ace/snippets/csharp"],function(e){if(typeof module=="object"){module.exports=e}})})();
-//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/csharp.js.map
+//# sourceMappingURL=csharp.js.map

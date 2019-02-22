@@ -13,7 +13,7 @@
 	</a>
 </li>
 <li>
-	<a href="#" class="reload" data-toggle="tooltip" data-placement="bottom" title="[[admin/menu:reload-forum]]">
+	<a href="#" class="rebuild-and-restart" data-toggle="tooltip" data-placement="bottom" title="[[admin/menu:rebuild-and-restart-forum]]">
 		<i class="fa fa-fw fa-refresh"></i>
 	</a>
 </li>
@@ -37,7 +37,7 @@
 </div>
 		</ul>
 	</section>
-	
+
 	<section class="menu-section">
 		<h3 class="menu-section-title">[[admin/menu:section-general]]</h3>
 		<ul class="menu-section-list">
@@ -137,6 +137,7 @@
 		<ul class="menu-section-list">
 			<li><a href="{relative_path}/admin/advanced/database">[[admin/menu:advanced/database]]</a></li>
 			<li><a href="{relative_path}/admin/advanced/events">[[admin/menu:advanced/events]]</a></li>
+			<li><a href="{relative_path}/admin/advanced/hooks">[[admin/menu:advanced/hooks]]</a></li>
 			<li><a href="{relative_path}/admin/advanced/cache">[[admin/menu:advanced/cache]]</a></li>
 			<li><a href="{relative_path}/admin/advanced/errors">[[admin/menu:advanced/errors]]</a></li>
 			<li><a href="{relative_path}/admin/advanced/logs">[[admin/menu:advanced/logs]]</a></li>
@@ -170,7 +171,7 @@
 	</a>
 </li>
 <li>
-	<a href="#" class="reload" data-toggle="tooltip" data-placement="bottom" title="[[admin/menu:reload-forum]]">
+	<a href="#" class="rebuild-and-restart" data-toggle="tooltip" data-placement="bottom" title="[[admin/menu:rebuild-and-restart-forum]]">
 		<i class="fa fa-fw fa-refresh"></i>
 	</a>
 </li>
@@ -180,7 +181,7 @@
 		<i class="fa fa-fw fa-home"></i>
 	</a>
 </li>
-			
+
 			<form role="search">
 				<div id="acp-search" >
 					<div class="dropdown">
@@ -324,6 +325,7 @@
 				<ul class="dropdown-menu" role="menu">
 					<li><a href="{relative_path}/admin/advanced/database">[[admin/menu:advanced/database]]</a></li>
 					<li><a href="{relative_path}/admin/advanced/events">[[admin/menu:advanced/events]]</a></li>
+					<li><a href="{relative_path}/admin/advanced/hooks">[[admin/menu:advanced/hooks]]</a></li>
 					<li><a href="{relative_path}/admin/advanced/cache">[[admin/menu:advanced/cache]]</a></li>
 					<li><a href="{relative_path}/admin/advanced/errors">[[admin/menu:advanced/errors]]</a></li>
 					<li><a href="{relative_path}/admin/advanced/logs">[[admin/menu:advanced/logs]]</a></li>

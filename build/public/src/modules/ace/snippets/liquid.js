@@ -1,2 +1,2 @@
 define("ace/snippets/liquid",["require","exports","module"],function(e,i,t){"use strict";i.snippetText="",i.scope="liquid"});(function(){window.require(["ace/snippets/liquid"],function(e){if(typeof module=="object"){module.exports=e}})})();
-//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/liquid.js.map
+//# sourceMappingURL=liquid.js.map

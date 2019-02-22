@@ -1,2 +1,2 @@
 define("ace/snippets/space",["require","exports","module"],function(e,p,s){"use strict";p.snippetText="",p.scope="space"});(function(){window.require(["ace/snippets/space"],function(e){if(typeof module=="object"){module.exports=e}})})();
-//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/space.js.map
+//# sourceMappingURL=space.js.map

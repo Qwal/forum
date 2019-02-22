@@ -1,2 +1,2 @@
 define("ace/snippets/html_ruby",["require","exports","module"],function(e,t,i){"use strict";t.snippetText="",t.scope="html_ruby"});(function(){window.require(["ace/snippets/html_ruby"],function(e){if(typeof module=="object"){module.exports=e}})})();
-//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/html_ruby.js.map
+//# sourceMappingURL=html_ruby.js.map

@@ -1,5 +1,5 @@
 
-<div id="chat-modal" class="chat-modal hide" tabindex="-1" role="dialog" aria-labelledby="Chat" aria-hidden="true" data-backdrop="none" data-name="{roomName}">
+<div id="chat-modal" class="chat-modal hide" tabindex="-1" role="dialog" aria-labelledby="Chat" aria-hidden="true" data-backdrop="none">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -25,7 +25,7 @@
 						<!-- END -->
 						<li class="dropdown-header">[[modules:chat.options]]</li>
 						<li>
-							<a href="#" data-action="members"><i class="fa fa-fw fa-plus"></i> [[modules:chat.add-users-to-room]]</a>
+							<a href="#" data-action="members"><i class="fa fa-fw fa-cog"></i> [[modules:chat.manage-room]]</a>
 						</li>
 						<li>
 							<a href="#" data-action="rename"><i class="fa fa-fw fa-edit"></i> [[modules:chat.rename-room]]</a>
@@ -59,10 +59,11 @@
 		<span class="label label-danger">[[user:deleted]]</span>
 		<!-- END -->
 		<span class="chat-timestamp timeago" title="{messages.timestampISO}"></span>
-	</div>
-	<div component="chat/message/body" class="message-body">
+		<!-- IF isAdminOrGlobalMod -->
+		<div class="chat-ip pull-right" title="[[modules:chat.show-ip]]"><i class="fa fa-info-circle chat-ip-button"></i></div>
+		<!-- ENDIF isAdminOrGlobalMod -->
 		<!-- IF messages.edited -->
-		<small class="text-muted pull-right" title="[[global:edited]] {messages.editedISO}"><i class="fa fa-edit"></i></span></small>
+		<div class="text-muted pull-right" title="[[global:edited]] {messages.editedISO}"><i class="fa fa-edit"></i></span></div>
 		<!-- ENDIF messages.edited -->
 		<!-- IF !config.disableChatMessageEditing -->
 		<!-- IF messages.self -->
@@ -73,6 +74,8 @@
 		</div>
 		<!-- ENDIF messages.self -->
 		<!-- ENDIF !config.disableChatMessageEditing -->
+	</div>
+	<div component="chat/message/body" class="message-body">
 		{messages.content}
 	</div>
 </li>

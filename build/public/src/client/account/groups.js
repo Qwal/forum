@@ -1,2 +1,2 @@
-"use strict";define("forum/account/groups",["forum/account/header"],function(r){var t={};t.init=function(){r.init();var t=$("#groups-list");t.on("click",".list-cover",function(){var t=$(this).parents("[data-slug]").attr("data-slug");ajaxify.go("groups/"+t)})};return t});
-//# sourceMappingURL=public/src/client/account/groups.js.map
+"use strict";define("forum/account/groups",["forum/account/header"],function(t){var r={};r.init=function(){t.init();var r=$("#groups-list");r.on("click",".list-cover",function(){var t=$(this).parents("[data-slug]").attr("data-slug");ajaxify.go("groups/"+t)})};return r});
+//# sourceMappingURL=groups.js.map

@@ -51,6 +51,7 @@
 <div component="chat/messages" class="expanded-chat" data-roomid="{roomId}">
 	<div component="chat/header">
 		<button type="button" class="close" data-action="pop-out"><span aria-hidden="true"><i class="fa fa-compress"></i></span><span class="sr-only">[[modules:chat.pop-out]]</span></button>
+		<button type="button" class="close" aria-label="Close" data-action="close"><span aria-hidden="true">&times;</span></button>
 		
 		<div class="dropdown pull-right">
 			<button class="close" data-toggle="dropdown" component="chat/controlsToggle"><i class="fa fa-gear"></i></button>
@@ -71,7 +72,7 @@
 				<!-- END -->
 				<li class="dropdown-header">[[modules:chat.options]]</li>
 				<li>
-					<a href="#" data-action="members"><i class="fa fa-fw fa-plus"></i> [[modules:chat.add-users-to-room]]</a>
+					<a href="#" data-action="members"><i class="fa fa-fw fa-cog"></i> [[modules:chat.manage-room]]</a>
 				</li>
 				<li>
 					<a href="#" data-action="rename"><i class="fa fa-fw fa-edit"></i> [[modules:chat.rename-room]]</a>
@@ -107,10 +108,11 @@
 		<span class="label label-danger">[[user:deleted]]</span>
 		<!-- END -->
 		<span class="chat-timestamp timeago" title="{messages.timestampISO}"></span>
-	</div>
-	<div component="chat/message/body" class="message-body">
+		<!-- IF isAdminOrGlobalMod -->
+		<div class="chat-ip pull-right" title="[[modules:chat.show-ip]]"><i class="fa fa-info-circle chat-ip-button"></i></div>
+		<!-- ENDIF isAdminOrGlobalMod -->
 		<!-- IF messages.edited -->
-		<small class="text-muted pull-right" title="[[global:edited]] {messages.editedISO}"><i class="fa fa-edit"></i></span></small>
+		<div class="text-muted pull-right" title="[[global:edited]] {messages.editedISO}"><i class="fa fa-edit"></i></span></div>
 		<!-- ENDIF messages.edited -->
 		<!-- IF !config.disableChatMessageEditing -->
 		<!-- IF messages.self -->
@@ -121,6 +123,8 @@
 		</div>
 		<!-- ENDIF messages.self -->
 		<!-- ENDIF !config.disableChatMessageEditing -->
+	</div>
+	<div component="chat/message/body" class="message-body">
 		{messages.content}
 	</div>
 </li>

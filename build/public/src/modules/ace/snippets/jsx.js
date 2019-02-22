@@ -1,2 +1,2 @@
 define("ace/snippets/jsx",["require","exports","module"],function(e,s,t){"use strict";s.snippetText="",s.scope="jsx"});(function(){window.require(["ace/snippets/jsx"],function(e){if(typeof module=="object"){module.exports=e}})})();
-//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/jsx.js.map
+//# sourceMappingURL=jsx.js.map

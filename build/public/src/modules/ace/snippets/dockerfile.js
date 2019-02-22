@@ -1,2 +1,2 @@
 define("ace/snippets/dockerfile",["require","exports","module"],function(e,i,o){"use strict";i.snippetText="",i.scope="dockerfile"});(function(){window.require(["ace/snippets/dockerfile"],function(e){if(typeof module=="object"){module.exports=e}})})();
-//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/dockerfile.js.map
+//# sourceMappingURL=dockerfile.js.map

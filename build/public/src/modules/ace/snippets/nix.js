@@ -1,2 +1,2 @@
 define("ace/snippets/nix",["require","exports","module"],function(e,i,n){"use strict";i.snippetText="",i.scope="nix"});(function(){window.require(["ace/snippets/nix"],function(e){if(typeof module=="object"){module.exports=e}})})();
-//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/nix.js.map
+//# sourceMappingURL=nix.js.map

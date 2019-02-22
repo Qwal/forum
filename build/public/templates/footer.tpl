@@ -1,5 +1,4 @@
-{isSpider}
-		</div><!-- END container -->
+		</div><!-- /.container#content -->
 	</main>
 	<!-- IF !isSpider -->
 	<div class="topic-search hidden">
@@ -38,7 +37,7 @@
 	<div class="hide">
 	<script>
 	window.addEventListener('load', function () {
-		define('/assets/templates/500.js', function () {
+		define(config.relative_path + '/assets/templates/500.js', function () {
 			function compiled(helpers, context, get, iter, helper) {
 				return '<div class="alert alert-danger">\n\t<strong>[[global:500.title]]</strong>\n\t<p>[[global:500.message]]</p>\n\t<p>' + 
 					helpers.__escape(get(context && context['path'])) + '</p>\n\t' + 

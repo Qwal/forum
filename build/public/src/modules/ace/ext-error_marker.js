@@ -1,1 +1,9 @@
-../../../../../node_modules/ace-builds/src-min/ext-error_marker.js
+;
+                (function() {
+                    window.require(["ace/ext/error_marker"], function(m) {
+                        if (typeof module == "object") {
+                            module.exports = m;
+                        }
+                    });
+                })();
+            

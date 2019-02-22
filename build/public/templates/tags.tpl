@@ -21,6 +21,7 @@
 	<!-- END widgets.header -->
 </div>
 <div class="tags">
+	<!-- IF displayTagSearch -->
 	<!-- IF tags.length -->
 	<div class="row">
 		<div class="col-lg-12">
@@ -31,6 +32,7 @@
 		</div>
 	</div>
 	<!-- ENDIF tags.length -->
+	<!-- ENDIF displayTagSearch -->
 
 	<!-- IF !tags.length -->
 	<div class="alert alert-warning">[[tags:no_tags]]</div>

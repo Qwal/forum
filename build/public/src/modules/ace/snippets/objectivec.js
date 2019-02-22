@@ -1,2 +1,2 @@
 define("ace/snippets/objectivec",["require","exports","module"],function(e,t,i){"use strict";t.snippetText="",t.scope="objectivec"});(function(){window.require(["ace/snippets/objectivec"],function(e){if(typeof module=="object"){module.exports=e}})})();
-//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/objectivec.js.map
+//# sourceMappingURL=objectivec.js.map

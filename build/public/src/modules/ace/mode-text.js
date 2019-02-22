@@ -1,1 +1,9 @@
-../../../../../node_modules/ace-builds/src-min/mode-text.js
+;
+                (function() {
+                    window.require(["ace/mode/text"], function(m) {
+                        if (typeof module == "object") {
+                            module.exports = m;
+                        }
+                    });
+                })();
+            

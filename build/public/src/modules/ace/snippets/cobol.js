@@ -1,2 +1,2 @@
 define("ace/snippets/cobol",["require","exports","module"],function(e,o,t){"use strict";o.snippetText="",o.scope="cobol"});(function(){window.require(["ace/snippets/cobol"],function(e){if(typeof module=="object"){module.exports=e}})})();
-//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/cobol.js.map
+//# sourceMappingURL=cobol.js.map

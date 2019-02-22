@@ -45,6 +45,7 @@
 		<i class="fa fa-ellipsis-v"></i>
 	</button>
 	<ul class="dropdown-menu dropdown-menu-right">
+		<!-- IF loggedIn -->
 		<!-- IF !isSelf -->
 		<!-- IF !banned -->
 		<!-- IF !config.disableChat -->
@@ -58,15 +59,19 @@
 		<li>
 			<a component="account/flag" href="#">[[user:flag-profile]]</a>
 		</li>
+		<li>
+			<a component="account/block" href="#"><!-- IF !../isBlocked -->[[user:block_user]]<!-- ELSE -->[[user:unblock_user]]<!-- END --></a>
+		</li>
 		<li class="divider"></li>
 		<!-- ENDIF !banned -->
 		<!-- ENDIF !isSelf -->
+		<!-- ENDIF loggedIn -->
 		<li>
 			<a href="{config.relative_path}/user/{userslug}" class="inline-block" id="profile">[[user:profile]]</a>
 		</li>
 		<!-- IF showHidden -->
-		<li><a href="{config.relative_path}/user/{userslug}/settings">[[user:settings]]</a></li>
 		<li><a href="{config.relative_path}/user/{userslug}/edit">[[user:edit]]</a></li>
+		<li><a href="{config.relative_path}/user/{userslug}/settings">[[user:settings]]</a></li>
 		<!-- ENDIF showHidden -->
 
 		<!-- IF !isSelf -->
@@ -88,6 +93,9 @@
 		<li class="divider"></li>
 		<li><a href="{config.relative_path}/user/{userslug}/following">[[user:following]]</a></li>
 		<li><a href="{config.relative_path}/user/{userslug}/followers">[[user:followers]]</a></li>
+		<!-- IF showHidden -->
+		<li><a href="{config.relative_path}/user/{userslug}/blocks">[[user:blocks]]</a></li>
+		<!-- ENDIF showHidden -->
 		<li class="divider"></li>
 		<li><a href="{config.relative_path}/user/{userslug}/topics">[[global:topics]]</a></li>
 		<li><a href="{config.relative_path}/user/{userslug}/posts">[[global:posts]]</a></li>
@@ -97,6 +105,7 @@
 		<li><a href="{config.relative_path}/user/{userslug}/groups">[[global:header.groups]]</a></li>
 
 		<!-- IF showHidden -->
+		<li><a href="{config.relative_path}/user/{userslug}/categories">[[user:watched_categories]]</a></li>
 		<li><a href="{config.relative_path}/user/{userslug}/bookmarks">[[user:bookmarks]]</a></li>
 		<li><a href="{config.relative_path}/user/{userslug}/watched">[[user:watched]]</a></li>
 		<li><a href="{config.relative_path}/user/{userslug}/ignored">[[user:ignored]]</a></li>
@@ -106,6 +115,7 @@
 		<li><a href="{config.relative_path}/user/{userslug}/downvoted">[[global:downvoted]]</a></li>
 		<!-- ENDIF !downvote:disabled -->
 		<!-- ENDIF !reputation:disabled -->
+		<li><a href="{config.relative_path}/user/{userslug}/uploads">[[global:uploads]]</a></li>
 		<!-- ENDIF showHidden -->
 
 		<!-- BEGIN profile_links -->
@@ -118,7 +128,8 @@
 </div>
 
 
-		<!-- IF showHidden -->
+		<!-- IF allowCoverPicture -->
+		<!-- IF canEdit -->
 		<div class="controls">
 			<span class="upload"><i class="fa fa-fw fa-4x fa-upload"></i></span>
 			<span class="resize"><i class="fa fa-fw fa-4x fa-arrows"></i></span>
@@ -126,7 +137,8 @@
 		</div>
 		<div class="save">[[groups:cover-save]] <i class="fa fa-fw fa-floppy-o"></i></div>
 		<div class="indicator">[[groups:cover-saving]] <i class="fa fa-fw fa-refresh fa-spin"></i></div>
-		<!-- ENDIF showHidden -->
+		<!-- ENDIF canEdit -->
+		<!-- ENDIF allowCoverPicture -->
 	</div>
 </div>
 
@@ -182,11 +194,13 @@
 					</label>
 				</div>
 				<!-- ENDIF !hideFullname -->
+				<!-- IF !config.disableChat -->
 				<div class="checkbox">
 					<label>
 						<input type="checkbox" data-property="restrictChat" <!-- IF settings.restrictChat -->checked<!-- ENDIF settings.restrictChat -->/> <strong>[[user:restrict_chats]]</strong>
 					</label>
 				</div>
+				<!-- ENDIF !config.disableChat -->
 			</div>
 
 			<h4>[[user:browsing]]</h4>
@@ -209,12 +223,6 @@
 						<input type="checkbox" data-property="scrollToMyPost" <!-- IF settings.scrollToMyPost -->checked<!-- ENDIF settings.scrollToMyPost -->/> <strong>[[user:scroll_to_my_post]]</strong>
 					</label>
 				</div>
-				<div class="checkbox">
-					<label>
-						<input type="checkbox" data-property="delayImageLoading" <!-- IF settings.delayImageLoading -->checked<!-- ENDIF settings.delayImageLoading -->/> <strong>[[user:delay_image_loading]]</strong>
-					</label>
-				</div>
-				<p class="help-block">[[user:image_load_delay_help]]</p>
 			</div>
 
 			<h4>[[global:pagination]]</h4>
@@ -293,6 +301,14 @@
 						<input type="checkbox" data-property="followTopicsOnReply" <!-- IF settings.followTopicsOnReply -->checked<!-- ENDIF settings.followTopicsOnReply -->/> <strong>[[user:follow_topics_you_reply_to]]</strong>
 					</label>
 				</div>
+				<div class="form-group">
+					<label>[[user:default-category-watch-state]]</label>
+					<select class="form-control" data-property="categoryWatchState">
+						<option value="watching" <!-- IF categoryWatchState.watching -->selected<!-- ENDIF categoryWatchState.watching -->>[[category:watching]]</option>
+						<option value="notwatching" <!-- IF categoryWatchState.notwatching -->selected<!-- ENDIF categoryWatchState.notwatching -->>[[category:not-watching]]</option>
+						<option value="ignoring" <!-- IF categoryWatchState.ignoring -->selected<!-- ENDIF categoryWatchState.ignoring -->>[[category:ignoring]]</option>
+					</select>
+				</div>
 			</div>
 
 
@@ -343,6 +359,7 @@
 					</div>
 				</div>
 
+				<!-- IF !config.disableChat -->
 				<label for="chat-incoming">[[user:incoming-message-sound]]</label>
 				<div class="row">
 					<div class="form-group col-xs-9">
@@ -372,6 +389,7 @@
 						<button type="button" class="form-control btn btn-sm btn-default" data-action="play"><span class="hidden-xs">[[global:play]] </span><i class="fa fa-play"></i></button>
 					</div>
 				</div>
+				<!-- ENDIF !config.disableChat -->
 			</div>
 		</div>
 	</div>

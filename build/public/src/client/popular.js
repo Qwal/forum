@@ -1,2 +1,2 @@
-"use strict";define("forum/popular",["forum/recent","components","forum/infinitescroll"],function(a,t,o){var e={};e.init=function(){app.enterRoom("popular_topics");t.get("popular/tab").removeClass("active").find('a[href="'+window.location.pathname+'"]').parent().addClass("active");if(!config.usePagination){o.init(n)}};function n(t){if(t<0||!$('[component="category"]').length){return}o.loadMore("topics.loadMorePopularTopics",{after:$('[component="category"]').attr("data-nextstart"),count:config.topicsPerPage,term:ajaxify.data.term},function(t,o){if(t.topics&&t.topics.length){a.onTopicsLoaded("popular",t.topics,false,o);$('[component="category"]').attr("data-nextstart",t.nextStart)}else{o()}})}return e});
-//# sourceMappingURL=public/src/client/popular.js.map
+"use strict";define("forum/popular",["topicList"],function(i){var t={};t.init=function(){app.enterRoom("popular_topics");i.init("popular")};return t});
+//# sourceMappingURL=popular.js.map

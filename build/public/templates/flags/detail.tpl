@@ -33,6 +33,7 @@
 				<select class="form-control" id="filter-type" name="type">
 					<option value="">[[flags:filter-type-all]]</option>
 					<option value="post">[[flags:filter-type-post]]</option>
+					<option value="user">[[flags:filter-type-user]]</option>
 				</select>
 			</div>
 
@@ -251,7 +252,7 @@
 							<ul>
 								<!-- BEGIN fields -->
 								<li>
-									<span class="label label-primary">@key</span><!-- IF @value --> &rarr; <span class="label label-default">@value</span><!-- ENDIF @value -->
+									<span class="label label-primary">[[flags:@key]]</span><!-- IF @value --> &rarr; <span class="label label-default">@value</span><!-- ENDIF @value -->
 								</li>
 								<!-- END fields -->
 							</ul>

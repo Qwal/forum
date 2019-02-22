@@ -1,2 +1,2 @@
 define("ace/snippets/lucene",["require","exports","module"],function(e,n,t){"use strict";n.snippetText="",n.scope="lucene"});(function(){window.require(["ace/snippets/lucene"],function(e){if(typeof module=="object"){module.exports=e}})})();
-//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/lucene.js.map
+//# sourceMappingURL=lucene.js.map

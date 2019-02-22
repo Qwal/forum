@@ -130,22 +130,31 @@
 				<!-- ENDIF !loggedIn -->
 			<!-- ENDIF privileges.topics:create -->
 
+			<a href="{url}" class="inline-block">
+				<div class="alert alert-warning hide" id="new-topics-alert"></div>
+			</a>
+
 			<span class="pull-right" component="category/controls">
 				<!-- IF config.loggedIn -->
 <div class="btn-group topic-watch-dropdown bottom-sheet" component="topic/watch">
 
 	<button class="btn btn-default dropdown-toggle" data-toggle="dropdown" type="button">
 
-		<span component="category/watching/menu" <!-- IF isIgnored -->class="hidden"<!-- ENDIF isIgnored -->><i class="fa fa-fw fa-eye"></i><span class="visible-sm-inline visible-md-inline visible-lg-inline">[[category:watching]]</span></span>
+		<span component="category/watching/menu" <!-- IF !../isWatched -->class="hidden"<!-- ENDIF !../isWatched -->><i class="fa fa-fw fa-inbox"></i><span class="visible-sm-inline visible-md-inline visible-lg-inline">[[category:watching]]</span></span>
 
-		<span component="category/ignoring/menu" <!-- IF !isIgnored -->class="hidden"<!-- ENDIF !isIgnored -->><i class="fa fa-fw fa-eye-slash"></i><span class="visible-sm-inline visible-md-inline visible-lg-inline">[[category:ignoring]]</span></span>
+		<span component="category/notwatching/menu" <!-- IF !../isNotWatched -->class="hidden"<!-- ENDIF !../isNotWatched -->><i class="fa fa-fw fa-clock-o"></i><span class="visible-sm-inline visible-md-inline visible-lg-inline">[[category:not-watching]]</span></span>
+
+		<span component="category/ignoring/menu" <!-- IF !../isIgnored -->class="hidden"<!-- ENDIF !../isIgnored -->><i class="fa fa-fw fa-eye-slash"></i><span class="visible-sm-inline visible-md-inline visible-lg-inline">[[category:ignoring]]</span></span>
 
 		<span class="caret"></span>
 	</button>
 
 	<ul class="dropdown-menu dropdown-menu-right">
-		<li><a href="#" component="category/watching"><i component="category/watching/check" class="fa fa-fw <!-- IF !isIgnored -->fa-check<!-- ENDIF !isIgnored -->"></i><i class="fa fa-fw fa-eye"></i> [[category:watching]]<p class="help-text"><small>[[category:watching.description]]</small></p></a></li>
-		<li><a href="#" component="category/ignoring"><i component="category/ignoring/check" class="fa fa-fw <!-- IF isIgnored -->fa-check<!-- ENDIF isIgnored -->"></i><i class="fa fa-fw fa-eye-slash"></i> [[category:ignoring]]<p class="help-text"><small>[[category:ignoring.description]]</small></p></a></li>
+		<li><a href="#" component="category/watching" data-state="watching"><i component="category/watching/check" class="fa fa-fw <!-- IF ../isWatched -->fa-check<!-- ENDIF ../isWatched -->"></i><i class="fa fa-fw fa-inbox"></i> [[category:watching]]<p class="help-text"><small>[[category:watching.description]]</small></p></a></li>
+
+		<li><a href="#" component="category/notwatching" data-state="notwatching"><i component="category/notwatching/check" class="fa fa-fw <!-- IF ../isNotWatched -->fa-check<!-- ENDIF ../isNotWatched -->"></i><i class="fa fa-fw fa-clock-o"></i> [[category:not-watching]]<p class="help-text"><small>[[category:not-watching.description]]</small></p></a></li>
+
+		<li><a href="#" component="category/ignoring" data-state="ignoring"><i component="category/ignoring/check" class="fa fa-fw <!-- IF ../isIgnored -->fa-check<!-- ENDIF ../isIgnored -->"></i><i class="fa fa-fw fa-eye-slash"></i> [[category:ignoring]]<p class="help-text"><small>[[category:ignoring.description]]</small></p></a></li>
 	</ul>
 </div>
 <!-- ENDIF config.loggedIn -->
@@ -260,10 +269,6 @@
 		<!-- ENDIF privileges.topics:create -->
 		<!-- ENDIF !topics.length -->
 
-		<a href="{url}">
-			<div class="alert alert-warning hide" id="new-topics-alert"></div>
-		</a>
-
 		<ul component="category" class="topic-list" itemscope itemtype="http://www.schema.org/ItemList" data-nextstart="{nextStart}" data-set="{set}">
 	<meta itemprop="itemListOrder" content="descending">
 	<!-- BEGIN topics -->
@@ -275,10 +280,10 @@
 				<!-- IF showSelect -->
 				<div class="select" component="topic/select">
 					<!-- IF topics.thumb -->
-					<img src="{topics.thumb}" class="user-img" />
+					<img src="{topics.thumb}" class="user-img not-responsive" />
 					<!-- ELSE -->
 					<!-- IF topics.user.picture -->
-					<img component="user/picture" data-uid="{topics.user.uid}" src="{topics.user.picture}" class="user-img" />
+					<img component="user/picture" data-uid="{topics.user.uid}" src="{topics.user.picture}" class="user-img not-responsive" />
 					<!-- ELSE -->
 					<div class="user-icon" style="background-color: {topics.user.icon:bgColor};">{topics.user.icon:text}</div>
 					<!-- ENDIF topics.user.picture -->
@@ -290,10 +295,10 @@
 				<!-- IF !showSelect -->
 				<a href="<!-- IF topics.user.userslug -->{config.relative_path}/user/{topics.user.userslug}<!-- ELSE -->#<!-- ENDIF topics.user.userslug -->" class="pull-left">
 					<!-- IF topics.thumb -->
-					<img src="{topics.thumb}" class="user-img" />
+					<img src="{topics.thumb}" class="user-img not-responsive" />
 					<!-- ELSE -->
 					<!-- IF topics.user.picture -->
-					<img component="user/picture" data-uid="{topics.user.uid}" src="{topics.user.picture}" class="user-img" />
+					<img component="user/picture" data-uid="{topics.user.uid}" src="{topics.user.picture}" class="user-img not-responsive" />
 					<!-- ELSE -->
 					<div class="user-icon" style="background-color: {topics.user.icon:bgColor};">{topics.user.icon:text}</div>
 					<!-- ENDIF topics.user.picture -->
@@ -317,7 +322,7 @@
 
 				<!-- IF !template.category -->
 				<small>
-					<a href="{config.relative_path}/category/{topics.category.slug}"><span class="fa-stack fa-lg"><i style="color:{topics.category.bgColor};" class="fa fa-circle fa-stack-2x"></i><i style="color:{topics.category.color};" class="fa {topics.category.icon} fa-stack-1x"></i></span> {topics.category.name}</a> &bull;
+					<a href="{config.relative_path}/category/{topics.category.slug}"><span class="fa-stack fa-lg" style="{function.generateCategoryBackground, topics.category}"><i style="color:{topics.category.color};" class="fa {topics.category.icon} fa-stack-1x"></i></span> {topics.category.name}</a> &bull;
 				</small>
 				<!-- ENDIF !template.category -->
 
@@ -332,6 +337,7 @@
 
 				<small class="hidden-xs"><span class="timeago" title="{topics.timestampISO}"></span> &bull; <a href="<!-- IF topics.user.userslug -->{config.relative_path}/user/{topics.user.userslug}<!-- ELSE -->#<!-- ENDIF topics.user.userslug -->">{topics.user.username}</a></small>
 				<small class="visible-xs-inline">
+					<i class="fa fa-reply"></i> &nbsp;
 					<!-- IF topics.teaser.timestamp -->
 					<span class="timeago" title="{topics.teaser.timestampISO}"></span>
 					<!-- ELSE -->
@@ -373,7 +379,7 @@
 				<p>
 					<a href="{config.relative_path}/user/{topics.teaser.user.userslug}">
 						<!-- IF topics.teaser.user.picture -->
-						<img title="{topics.teaser.user.username}" class="user-img" src="{topics.teaser.user.picture}" />
+						<img title="{topics.teaser.user.username}" class="user-img not-responsive" src="{topics.teaser.user.picture}" />
 						<!-- ELSE -->
 						<span title="{topics.teaser.user.username}" class="user-icon user-img" style="background-color: {topics.teaser.user.icon:bgColor};">{topics.teaser.user.icon:text}</span>
 						<!-- ENDIF topics.teaser.user.picture -->
@@ -452,35 +458,6 @@
 	<!-- BEGIN widgets.footer -->
 	{{widgets.footer.html}}
 	<!-- END widgets.footer -->
-</div>
-
-<div id="move_thread_modal" class="modal" tabindex="-1" role="dialog" aria-labelledby="Move Topic" aria-hidden="true">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h3>[[topic:move_topic]]</h3>
-			</div>
-			<div class="modal-body">
-				<div component="category-selector" class="btn-group <!-- IF pullRight -->pull-right<!-- ENDIF pullRight -->">
-	<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-		<span component="category-selector-selected">[[topic:thread_tools.select_category]]</span> <span class="caret"></span>
-	</button>
-	<ul class="dropdown-menu category-dropdown-menu" role="menu">
-		<!-- BEGIN categories -->
-		<li role="presentation" class="category <!-- IF categories.disabledClass -->disabled<!-- ENDIF categories.disabledClass -->" data-cid="{categories.cid}" data-name="{categories.name}">
-			<a role="menu-item">{categories.level}<span component="category-markup"><!-- IF categories.icon --><span class="fa-stack"><i style="color: {categories.bgColor};" class="fa fa-circle fa-stack-2x"></i><i style="color: {categories.color};" class="fa fa-stack-1x fa-fw {categories.icon}"></i></span><!-- ENDIF categories.icon --> {categories.name}</span></a>
-		</li>
-		<!-- END categories -->
-	</ul>
-</div>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal" id="move_thread_cancel">[[global:buttons.close]]</button>
-				<button type="button" class="btn btn-primary" id="move_thread_commit" disabled>[[topic:confirm_move]]</button>
-			</div>
-		</div>
-	</div>
 </div>
 
 <!-- IF !config.usePagination -->

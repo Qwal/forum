@@ -1,2 +1,2 @@
 define("ace/snippets/batchfile",["require","exports","module"],function(e,t,i){"use strict";t.snippetText="",t.scope="batchfile"});(function(){window.require(["ace/snippets/batchfile"],function(e){if(typeof module=="object"){module.exports=e}})})();
-//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/batchfile.js.map
+//# sourceMappingURL=batchfile.js.map

@@ -1,2 +1,2 @@
 define("ace/snippets/csound_document",["require","exports","module"],function(n,e,t){"use strict";e.snippetText="# <CsoundSynthesizer>\nsnippet synth\n\t<CsoundSynthesizer>\n\t<CsInstruments>\n\t${1}\n\t</CsInstruments>\n\t<CsScore>\n\te\n\t</CsScore>\n\t</CsoundSynthesizer>\n",e.scope="csound_document"});(function(){window.require(["ace/snippets/csound_document"],function(n){if(typeof module=="object"){module.exports=n}})})();
-//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/csound_document.js.map
+//# sourceMappingURL=csound_document.js.map

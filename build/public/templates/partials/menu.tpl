@@ -1,7 +1,7 @@
 			<div class="navbar-header">
 				<button type="button" class="navbar-toggle pull-left" id="mobile-menu">
 					<span component="notifications/icon" class="notification-icon fa fa-fw fa-bell-o unread-count" data-content="{unreadCount.notification}"></span>
-					<i class="fa fa-lg fa-bars"></i>
+					<i class="fa fa-lg fa-fw fa-bars"></i>
 				</button>
 				<button type="button" class="navbar-toggle hidden" id="mobile-chats">
 					<span component="chat/icon" class="notification-icon fa fa-fw fa-comments unread-count" data-content="{unreadCount.chat}"></span>
@@ -36,7 +36,7 @@
 						<ul class="dropdown-menu" aria-labelledby="notif_dropdown">
 							<li>
 								<ul component="notifications/list" class="notification-list">
-									<li>
+									<li class="loading-text">
 										<a href="#"><i class="fa fa-refresh fa-spin"></i> [[global:notifications.loading]]</a>
 									</li>
 								</ul>
@@ -54,8 +54,8 @@
 						<ul class="dropdown-menu" aria-labelledby="chat_dropdown">
 							<li>
 								<ul component="chat/list" class="chat-list chats-list">
-									<li>
-										<i class="fa fa-refresh fa-spin"></i> [[global:chats.loading]]
+									<li class="loading-text">
+										<a href="#"><i class="fa fa-refresh fa-spin"></i> [[global:chats.loading]]</a>
 									</li>
 								</ul>
 							</li>
@@ -71,7 +71,7 @@
 							<img component="header/userpicture" src="{user.picture}" alt="{user.username}"/>
 							<!-- ELSE -->
 							<span component="header/usericon" class="user-icon" style="background-color: {user.icon:bgColor}; display: block;">{user.icon:text}</span>
-							<!-- ENDIF user.picture --> 
+							<!-- ENDIF user.picture -->
 							<span id="user-header-name" class="visible-xs-inline">{user.username}</span>
 						</label>
 						<input type="checkbox" class="hidden" id="user-control-list-check" aria-hidden="true">
@@ -84,22 +84,22 @@
 							<li role="presentation" class="divider"></li>
 							<li>
 								<a href="#" class="user-status" data-status="online">
-									<i class="fa fa-fw fa-circle status online"></i><span> [[global:online]]</span>
+									<i class="fa fa-fw fa-circle status online"></i><span <!-- IF user.online -->class="bold"<!-- ENDIF user.online -->> [[global:online]]</span>
 								</a>
 							</li>
 							<li>
 								<a href="#" class="user-status" data-status="away">
-									<i class="fa fa-fw fa-circle status away"></i><span> [[global:away]]</span>
+									<i class="fa fa-fw fa-circle status away"></i><span <!-- IF user.away -->class="bold"<!-- ENDIF user.away -->> [[global:away]]</span>
 								</a>
 							</li>
 							<li>
 								<a href="#" class="user-status" data-status="dnd">
-									<i class="fa fa-fw fa-circle status dnd"></i><span> [[global:dnd]]</span>
+									<i class="fa fa-fw fa-circle status dnd"></i><span <!-- IF user.dnd -->class="bold"<!-- ENDIF user.dnd -->> [[global:dnd]]</span>
 								</a>
 							</li>
 							<li>
 								<a href="#" class="user-status" data-status="offline">
-									<i class="fa fa-fw fa-circle status offline"></i><span> [[global:invisible]]</span>
+									<i class="fa fa-fw fa-circle status offline"></i><span <!-- IF user.offline -->class="bold"<!-- ENDIF user.offline -->> [[global:invisible]]</span>
 								</a>
 							</li>
 							<li role="presentation" class="divider"></li>
@@ -151,14 +151,14 @@
 					<!-- IF allowRegistration -->
 					<li>
 						<a href="{relative_path}/register">
-							<i class="fa fa-pencil visible-xs-inline"></i>
+							<i class="fa fa-pencil fa-fw hidden-sm hidden-md hidden-lg"></i>
 							<span>[[global:register]]</span>
 						</a>
 					</li>
 					<!-- ENDIF allowRegistration -->
 					<li>
 						<a href="{relative_path}/login">
-							<i class="fa fa-sign-in visible-xs-inline"></i>
+							<i class="fa fa-sign-in fa-fw hidden-sm hidden-md hidden-lg"></i>
 							<span>[[global:login]]</span>
 						</a>
 					</li>
@@ -240,7 +240,7 @@
 				<ul class="nav navbar-nav navbar-right">
 					<li>
 						<a href="{relative_path}/login">
-							<i class="fa fa-sign-in visible-xs-inline"></i>
+							<i class="fa fa-sign-in fa-fw hidden-sm hidden-md hidden-lg"></i>
 							<span>[[global:login]]</span>
 						</a>
 					</li>

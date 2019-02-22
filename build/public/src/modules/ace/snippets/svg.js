@@ -1,2 +1,2 @@
 define("ace/snippets/svg",["require","exports","module"],function(e,s,t){"use strict";s.snippetText="",s.scope="svg"});(function(){window.require(["ace/snippets/svg"],function(e){if(typeof module=="object"){module.exports=e}})})();
-//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/svg.js.map
+//# sourceMappingURL=svg.js.map

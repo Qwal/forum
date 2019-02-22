@@ -45,6 +45,7 @@
 		<i class="fa fa-ellipsis-v"></i>
 	</button>
 	<ul class="dropdown-menu dropdown-menu-right">
+		<!-- IF loggedIn -->
 		<!-- IF !isSelf -->
 		<!-- IF !banned -->
 		<!-- IF !config.disableChat -->
@@ -58,15 +59,19 @@
 		<li>
 			<a component="account/flag" href="#">[[user:flag-profile]]</a>
 		</li>
+		<li>
+			<a component="account/block" href="#"><!-- IF !../isBlocked -->[[user:block_user]]<!-- ELSE -->[[user:unblock_user]]<!-- END --></a>
+		</li>
 		<li class="divider"></li>
 		<!-- ENDIF !banned -->
 		<!-- ENDIF !isSelf -->
+		<!-- ENDIF loggedIn -->
 		<li>
 			<a href="{config.relative_path}/user/{userslug}" class="inline-block" id="profile">[[user:profile]]</a>
 		</li>
 		<!-- IF showHidden -->
-		<li><a href="{config.relative_path}/user/{userslug}/settings">[[user:settings]]</a></li>
 		<li><a href="{config.relative_path}/user/{userslug}/edit">[[user:edit]]</a></li>
+		<li><a href="{config.relative_path}/user/{userslug}/settings">[[user:settings]]</a></li>
 		<!-- ENDIF showHidden -->
 
 		<!-- IF !isSelf -->
@@ -88,6 +93,9 @@
 		<li class="divider"></li>
 		<li><a href="{config.relative_path}/user/{userslug}/following">[[user:following]]</a></li>
 		<li><a href="{config.relative_path}/user/{userslug}/followers">[[user:followers]]</a></li>
+		<!-- IF showHidden -->
+		<li><a href="{config.relative_path}/user/{userslug}/blocks">[[user:blocks]]</a></li>
+		<!-- ENDIF showHidden -->
 		<li class="divider"></li>
 		<li><a href="{config.relative_path}/user/{userslug}/topics">[[global:topics]]</a></li>
 		<li><a href="{config.relative_path}/user/{userslug}/posts">[[global:posts]]</a></li>
@@ -97,6 +105,7 @@
 		<li><a href="{config.relative_path}/user/{userslug}/groups">[[global:header.groups]]</a></li>
 
 		<!-- IF showHidden -->
+		<li><a href="{config.relative_path}/user/{userslug}/categories">[[user:watched_categories]]</a></li>
 		<li><a href="{config.relative_path}/user/{userslug}/bookmarks">[[user:bookmarks]]</a></li>
 		<li><a href="{config.relative_path}/user/{userslug}/watched">[[user:watched]]</a></li>
 		<li><a href="{config.relative_path}/user/{userslug}/ignored">[[user:ignored]]</a></li>
@@ -106,6 +115,7 @@
 		<li><a href="{config.relative_path}/user/{userslug}/downvoted">[[global:downvoted]]</a></li>
 		<!-- ENDIF !downvote:disabled -->
 		<!-- ENDIF !reputation:disabled -->
+		<li><a href="{config.relative_path}/user/{userslug}/uploads">[[global:uploads]]</a></li>
 		<!-- ENDIF showHidden -->
 
 		<!-- BEGIN profile_links -->
@@ -118,7 +128,8 @@
 </div>
 
 
-		<!-- IF showHidden -->
+		<!-- IF allowCoverPicture -->
+		<!-- IF canEdit -->
 		<div class="controls">
 			<span class="upload"><i class="fa fa-fw fa-4x fa-upload"></i></span>
 			<span class="resize"><i class="fa fa-fw fa-4x fa-arrows"></i></span>
@@ -126,7 +137,8 @@
 		</div>
 		<div class="save">[[groups:cover-save]] <i class="fa fa-fw fa-floppy-o"></i></div>
 		<div class="indicator">[[groups:cover-saving]] <i class="fa fa-fw fa-refresh fa-spin"></i></div>
-		<!-- ENDIF showHidden -->
+		<!-- ENDIF canEdit -->
+		<!-- ENDIF allowCoverPicture -->
 	</div>
 </div>
 
@@ -150,10 +162,10 @@
 				<!-- IF showSelect -->
 				<div class="select" component="topic/select">
 					<!-- IF topics.thumb -->
-					<img src="{topics.thumb}" class="user-img" />
+					<img src="{topics.thumb}" class="user-img not-responsive" />
 					<!-- ELSE -->
 					<!-- IF topics.user.picture -->
-					<img component="user/picture" data-uid="{topics.user.uid}" src="{topics.user.picture}" class="user-img" />
+					<img component="user/picture" data-uid="{topics.user.uid}" src="{topics.user.picture}" class="user-img not-responsive" />
 					<!-- ELSE -->
 					<div class="user-icon" style="background-color: {topics.user.icon:bgColor};">{topics.user.icon:text}</div>
 					<!-- ENDIF topics.user.picture -->
@@ -165,10 +177,10 @@
 				<!-- IF !showSelect -->
 				<a href="<!-- IF topics.user.userslug -->{config.relative_path}/user/{topics.user.userslug}<!-- ELSE -->#<!-- ENDIF topics.user.userslug -->" class="pull-left">
 					<!-- IF topics.thumb -->
-					<img src="{topics.thumb}" class="user-img" />
+					<img src="{topics.thumb}" class="user-img not-responsive" />
 					<!-- ELSE -->
 					<!-- IF topics.user.picture -->
-					<img component="user/picture" data-uid="{topics.user.uid}" src="{topics.user.picture}" class="user-img" />
+					<img component="user/picture" data-uid="{topics.user.uid}" src="{topics.user.picture}" class="user-img not-responsive" />
 					<!-- ELSE -->
 					<div class="user-icon" style="background-color: {topics.user.icon:bgColor};">{topics.user.icon:text}</div>
 					<!-- ENDIF topics.user.picture -->
@@ -192,7 +204,7 @@
 
 				<!-- IF !template.category -->
 				<small>
-					<a href="{config.relative_path}/category/{topics.category.slug}"><span class="fa-stack fa-lg"><i style="color:{topics.category.bgColor};" class="fa fa-circle fa-stack-2x"></i><i style="color:{topics.category.color};" class="fa {topics.category.icon} fa-stack-1x"></i></span> {topics.category.name}</a> &bull;
+					<a href="{config.relative_path}/category/{topics.category.slug}"><span class="fa-stack fa-lg" style="{function.generateCategoryBackground, topics.category}"><i style="color:{topics.category.color};" class="fa {topics.category.icon} fa-stack-1x"></i></span> {topics.category.name}</a> &bull;
 				</small>
 				<!-- ENDIF !template.category -->
 
@@ -207,6 +219,7 @@
 
 				<small class="hidden-xs"><span class="timeago" title="{topics.timestampISO}"></span> &bull; <a href="<!-- IF topics.user.userslug -->{config.relative_path}/user/{topics.user.userslug}<!-- ELSE -->#<!-- ENDIF topics.user.userslug -->">{topics.user.username}</a></small>
 				<small class="visible-xs-inline">
+					<i class="fa fa-reply"></i> &nbsp;
 					<!-- IF topics.teaser.timestamp -->
 					<span class="timeago" title="{topics.teaser.timestampISO}"></span>
 					<!-- ELSE -->
@@ -248,7 +261,7 @@
 				<p>
 					<a href="{config.relative_path}/user/{topics.teaser.user.userslug}">
 						<!-- IF topics.teaser.user.picture -->
-						<img title="{topics.teaser.user.username}" class="user-img" src="{topics.teaser.user.picture}" />
+						<img title="{topics.teaser.user.username}" class="user-img not-responsive" src="{topics.teaser.user.picture}" />
 						<!-- ELSE -->
 						<span title="{topics.teaser.user.username}" class="user-icon user-img" style="background-color: {topics.teaser.user.icon:bgColor};">{topics.teaser.user.icon:text}</span>
 						<!-- ENDIF topics.teaser.user.picture -->

@@ -1,2 +1,2 @@
 define("ace/snippets/red",["require","exports","module"],function(e,t,i){"use strict";t.snippetText=" ",t.scope="red"});(function(){window.require(["ace/snippets/red"],function(e){if(typeof module=="object"){module.exports=e}})})();
-//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/red.js.map
+//# sourceMappingURL=red.js.map

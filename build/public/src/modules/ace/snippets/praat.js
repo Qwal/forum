@@ -1,2 +1,2 @@
 define("ace/snippets/praat",["require","exports","module"],function(e,t,p){"use strict";t.snippetText="",t.scope="praat"});(function(){window.require(["ace/snippets/praat"],function(e){if(typeof module=="object"){module.exports=e}})})();
-//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/praat.js.map
+//# sourceMappingURL=praat.js.map

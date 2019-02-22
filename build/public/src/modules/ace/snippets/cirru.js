@@ -1,2 +1,2 @@
 define("ace/snippets/cirru",["require","exports","module"],function(e,i,r){"use strict";i.snippetText="",i.scope="cirru"});(function(){window.require(["ace/snippets/cirru"],function(e){if(typeof module=="object"){module.exports=e}})})();
-//# sourceMappingURL=node_modules/ace-builds/src-min/snippets/cirru.js.map
+//# sourceMappingURL=cirru.js.map

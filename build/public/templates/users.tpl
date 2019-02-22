@@ -42,7 +42,7 @@
 			<!-- ENDIF loggedIn -->
 			<!-- ENDIF inviteOnly -->
 		</div>
-		<!-- IF function.displayUserSearch, {config.allowGuestUserSearching} -->
+		<!-- IF displayUserSearch -->
 		<div class="col-lg-3 col-xs-9">
 			<div class="search">
 				<div class="input-group">
@@ -53,7 +53,7 @@
 				</div>
 			</div>
 		</div>
-		<!-- ENDIF function.displayUserSearch -->
+		<!-- ENDIF displayUserSearch -->
 	</div>
 
 	<ul id="users-container" class="users-container">
@@ -97,7 +97,7 @@
 		<!-- IF section_flagged -->
 		<div title="flag count" class="flag-count">
 			<i class="fa fa-flag"></i>
-			<span class="formatted-number"><a href="{config.relative_path}/flags?targetUid={users.uid}">{users.flags}</a></span>
+			<span><a class="formatted-number" href="{config.relative_path}/flags?targetUid={users.uid}">{users.flags}</a></span>
 		</div>
 		<!-- ENDIF section_flagged -->
 	</div>

@@ -28,8 +28,11 @@
 			<!-- ELSE -->
 			<a component="category/post/guest" href="{config.relative_path}/login" class="btn btn-primary">[[category:guest-login-post]]</a>
 			<!-- ENDIF loggedIn -->
+			<a href="{config.relative_path}/{selectedFilter.url}{querystring}" class="inline-block">
+				<div class="alert alert-warning hide" id="new-topics-alert"></div>
+			</a>
 		</div>
-		<div class="markread btn-group pull-right category-dropdown-container<!-- IF !topics.length --> hidden<!-- ENDIF !topics.length -->">
+		<div class="markread btn-group pull-right category-dropdown-container bottom-sheet<!-- IF !topics.length --> hidden<!-- ENDIF !topics.length -->">
 			<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
 				[[unread:mark_as_read]] <span class="caret"></span>
 			</button>
@@ -45,37 +48,40 @@
 				<li class="divider"></li>
 				<!-- BEGIN categories -->
 				<li role="presentation" class="category" data-cid="{categories.cid}">
-					<a role="menu-item" href="#">{categories.level}<!-- IF categories.icon --><span class="fa-stack"><i style="color: {categories.bgColor};" class="fa fa-circle fa-stack-2x"></i><i class="fa fa-fw fa-stack-1x {categories.icon}" style="color: {categories.color};"></i></span><!-- ENDIF categories.icon --> {categories.name}</a>
+					<a role="menu-item" href="#">{categories.level}<!-- IF categories.icon --><span class="fa-stack" style="{function.generateCategoryBackground}"><i class="fa fa-fw fa-stack-1x {categories.icon}" style="color: {categories.color};"></i></span><!-- ENDIF categories.icon --> {categories.name}</a>
 				</li>
 				<!-- END categories -->
 			</ul>
 		</div>
 
-		<div component="category/dropdown" class="btn-group pull-right category-dropdown-container">
-			<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-				<!-- IF selectedCategory --><!-- IF selectedCategory.icon --><span class="fa-stack"><i style="color: {selectedCategory.bgColor};" class="fa fa-circle fa-stack-2x"></i><i class="fa fa-fw fa-stack-1x {selectedCategory.icon}" style="color: {selectedCategory.color};"></i></span><!-- ENDIF selectedCategory.icon --> {selectedCategory.name}<!-- ELSE -->
-				[[unread:all_categories]]<!-- ENDIF selectedCategory --> <span class="caret"></span>
-			</button>
-			<ul component="category/list" class="dropdown-menu category-dropdown-menu" role="menu">
-				<li role="presentation" class="category">
-					<a role="menu-item" href="{config.relative_path}/{selectedFilter.url}"><i class="fa fa-fw <!-- IF !selectedCategory -->fa-check<!-- ENDIF !selectedCategory -->"></i> [[unread:all_categories]]</a>
-				</li>
-				<!-- BEGIN categories -->
-				<li role="presentation" class="category" data-cid="{categories.cid}" data-parent-cid="{categories.parentCid}">
-					<a role="menu-item" href="{config.relative_path}/{selectedFilter.url}?cid={categories.cid}"><i component="category/select/icon" class="fa fa-fw <!-- IF categories.selected -->fa-check<!-- ENDIF categories.selected -->"></i>{categories.level}<!-- IF categories.icon --><span class="fa-stack"><i style="color: {categories.bgColor};" class="fa fa-circle fa-stack-2x"></i><i class="fa fa-fw fa-stack-1x {categories.icon}" style="color: {categories.color};"></i></span><!-- ENDIF categories.icon --> {categories.name}</a>
-				</li>
-				<!-- END categories -->
-			</ul>
-		</div>
+		<div component="category/dropdown" class="btn-group pull-right category-dropdown-container bottom-sheet <!-- IF !categories.length -->hidden<!-- ENDIF !categories.length -->">
+    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+        <!-- IF selectedCategory --><span class="fa-stack" style="{function.generateCategoryBackground, selectedCategory}"><i class="fa fa-fw fa-stack-1x {selectedCategory.icon}" style="color: {selectedCategory.color};"></i></span> {selectedCategory.name}<!-- ELSE -->
+        [[unread:all_categories]]<!-- ENDIF selectedCategory --> <span class="caret"></span>
+    </button>
+    <div component="category-selector-search" class="hidden">
+        <input type="text" class="form-control" autocomplete="off">
+    </div>
+    <ul component="category/list" class="dropdown-menu category-dropdown-menu" role="menu">
+        <li role="presentation" class="category">
+            <a role="menu-item" href="{config.relative_path}/{allCategoriesUrl}"><i class="fa fa-fw <!-- IF !selectedCategory -->fa-check<!-- ENDIF !selectedCategory -->"></i> [[unread:all_categories]]</a>
+        </li>
+        <!-- BEGIN categories -->
+        <li role="presentation" class="category" data-cid="{categories.cid}" data-parent-cid="{categories.parentCid}" data-name="{categories.name}">
+            <a role="menu-item" href="#"><i component="category/select/icon" class="fa fa-fw <!-- IF categories.selected -->fa-check<!-- ENDIF categories.selected -->"></i>{categories.level}<!-- IF categories.icon --><span class="fa-stack" style="{function.generateCategoryBackground}"><i class="fa fa-fw fa-stack-1x {categories.icon}" style="color: {categories.color};"></i></span><!-- ENDIF categories.icon --> {categories.name}</a>
+        </li>
+        <!-- END categories -->
+    </ul>
+</div>
 
-		<div class="btn-group pull-right">
+		<div class="btn-group pull-right bottom-sheet">
 			<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
 			{selectedFilter.name} <span class="caret"></span>
 			</button>
 			<ul class="dropdown-menu" role="menu">
 				<!-- BEGIN filters -->
 				<li role="presentation" class="category">
-					<a role="menu-item" href="{config.relative_path}/{filters.url}{querystring}"><i class="fa fa-fw <!-- IF filters.selected -->fa-check<!-- ENDIF filters.selected -->"></i>{filters.name}</a>
+					<a role="menu-item" href="{config.relative_path}/{filters.url}"><i class="fa fa-fw <!-- IF filters.selected -->fa-check<!-- ENDIF filters.selected -->"></i>{filters.name}</a>
 				</li>
 				<!-- END filters -->
 			</ul>
@@ -86,10 +92,6 @@
 
 	<div class="category">
 		<div id="category-no-topics" class="alert alert-warning <!-- IF topics.length -->hidden<!-- ENDIF topics.length -->">[[unread:no_unread_topics]]</div>
-
-		<a href="{config.relative_path}/{selectedFilter.url}{querystring}">
-			<div class="alert alert-warning hide" id="new-topics-alert"></div>
-		</a>
 
 		<ul component="category" class="topic-list" itemscope itemtype="http://www.schema.org/ItemList" data-nextstart="{nextStart}" data-set="{set}">
 	<meta itemprop="itemListOrder" content="descending">
@@ -102,10 +104,10 @@
 				<!-- IF showSelect -->
 				<div class="select" component="topic/select">
 					<!-- IF topics.thumb -->
-					<img src="{topics.thumb}" class="user-img" />
+					<img src="{topics.thumb}" class="user-img not-responsive" />
 					<!-- ELSE -->
 					<!-- IF topics.user.picture -->
-					<img component="user/picture" data-uid="{topics.user.uid}" src="{topics.user.picture}" class="user-img" />
+					<img component="user/picture" data-uid="{topics.user.uid}" src="{topics.user.picture}" class="user-img not-responsive" />
 					<!-- ELSE -->
 					<div class="user-icon" style="background-color: {topics.user.icon:bgColor};">{topics.user.icon:text}</div>
 					<!-- ENDIF topics.user.picture -->
@@ -117,10 +119,10 @@
 				<!-- IF !showSelect -->
 				<a href="<!-- IF topics.user.userslug -->{config.relative_path}/user/{topics.user.userslug}<!-- ELSE -->#<!-- ENDIF topics.user.userslug -->" class="pull-left">
 					<!-- IF topics.thumb -->
-					<img src="{topics.thumb}" class="user-img" />
+					<img src="{topics.thumb}" class="user-img not-responsive" />
 					<!-- ELSE -->
 					<!-- IF topics.user.picture -->
-					<img component="user/picture" data-uid="{topics.user.uid}" src="{topics.user.picture}" class="user-img" />
+					<img component="user/picture" data-uid="{topics.user.uid}" src="{topics.user.picture}" class="user-img not-responsive" />
 					<!-- ELSE -->
 					<div class="user-icon" style="background-color: {topics.user.icon:bgColor};">{topics.user.icon:text}</div>
 					<!-- ENDIF topics.user.picture -->
@@ -144,7 +146,7 @@
 
 				<!-- IF !template.category -->
 				<small>
-					<a href="{config.relative_path}/category/{topics.category.slug}"><span class="fa-stack fa-lg"><i style="color:{topics.category.bgColor};" class="fa fa-circle fa-stack-2x"></i><i style="color:{topics.category.color};" class="fa {topics.category.icon} fa-stack-1x"></i></span> {topics.category.name}</a> &bull;
+					<a href="{config.relative_path}/category/{topics.category.slug}"><span class="fa-stack fa-lg" style="{function.generateCategoryBackground, topics.category}"><i style="color:{topics.category.color};" class="fa {topics.category.icon} fa-stack-1x"></i></span> {topics.category.name}</a> &bull;
 				</small>
 				<!-- ENDIF !template.category -->
 
@@ -159,6 +161,7 @@
 
 				<small class="hidden-xs"><span class="timeago" title="{topics.timestampISO}"></span> &bull; <a href="<!-- IF topics.user.userslug -->{config.relative_path}/user/{topics.user.userslug}<!-- ELSE -->#<!-- ENDIF topics.user.userslug -->">{topics.user.username}</a></small>
 				<small class="visible-xs-inline">
+					<i class="fa fa-reply"></i> &nbsp;
 					<!-- IF topics.teaser.timestamp -->
 					<span class="timeago" title="{topics.teaser.timestampISO}"></span>
 					<!-- ELSE -->
@@ -200,7 +203,7 @@
 				<p>
 					<a href="{config.relative_path}/user/{topics.teaser.user.userslug}">
 						<!-- IF topics.teaser.user.picture -->
-						<img title="{topics.teaser.user.username}" class="user-img" src="{topics.teaser.user.picture}" />
+						<img title="{topics.teaser.user.username}" class="user-img not-responsive" src="{topics.teaser.user.picture}" />
 						<!-- ELSE -->
 						<span title="{topics.teaser.user.username}" class="user-icon user-img" style="background-color: {topics.teaser.user.icon:bgColor};">{topics.teaser.user.icon:text}</span>
 						<!-- ENDIF topics.teaser.user.picture -->

@@ -1,2 +1,2 @@
-"use strict";define("admin/advanced/events",function(){var e={};e.init=function(){$('[data-action="clear"]').on("click",function(){socket.emit("admin.deleteAllEvents",function(e){if(e){return app.alertError(e.message)}$(".events-list").empty()})})};return e});
-//# sourceMappingURL=public/src/admin/advanced/events.js.map
+"use strict";define("admin/advanced/events",function(){var e={};e.init=function(){$('[data-action="clear"]').on("click",function(){socket.emit("admin.deleteAllEvents",function(e){if(e){return app.alertError(e.message)}$(".events-list").empty()})});$(".delete-event").on("click",function(){var e=$(this).parents("[data-eid]");var t=e.attr("data-eid");socket.emit("admin.deleteEvents",[t],function(t){if(t){return app.alertError(t.message)}e.remove()})});$("#filter").on("change",function(){var e=$(this).val();ajaxify.go("admin/advanced/events"+(e?"?filter="+e:""))})};return e});
+//# sourceMappingURL=events.js.map

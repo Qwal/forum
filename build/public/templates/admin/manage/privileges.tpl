@@ -1,24 +1,35 @@
 <div class="row">
 	<form role="form" class="category">
-		<div class="row">
-			<div class="col-md-3 pull-right">
-				<select id="category-selector" class="form-control">
-					<option value="global" <!-- IF !cid --> selected <!-- ENDIF !cid -->>[[admin/manage/privileges:global]]</option>
-					<option disabled>_____________</option>
-					<!-- BEGIN allCategories -->
-					<option value="{allCategories.value}" <!-- IF allCategories.selected -->selected<!-- ENDIF allCategories.selected -->>{allCategories.text}</option>
-					<!-- END allCategories -->
-				</select>
-			</div>
-		</div>
-
-		<br/>
-
 		<div class="">
 			<p>
 				[[admin/manage/categories:privileges.description]]
 			</p>
+
+			<div class="lead">
+				[[admin/manage/categories:privileges.category-selector]]
+				<div component="category-selector" class="btn-group <!-- IF pullRight -->pull-right<!-- ENDIF pullRight -->">
+	<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+		<span component="category-selector-selected"><!-- IF selectedCategory --><span class="fa-stack" style="{function.generateCategoryBackground, selectedCategory}"><i class="fa fa-fw fa-stack-1x {selectedCategory.icon}" style="color: {selectedCategory.color};"></i></span> {selectedCategory.name}<!-- ELSE -->
+		[[topic:thread_tools.select_category]]<!-- ENDIF selectedCategory --></span> <span class="caret"></span>
+	</button>
+	<div component="category-selector-search" class="hidden">
+		<input type="text" class="form-control" autocomplete="off">
+	</div>
+	<ul component="category/list" class="dropdown-menu category-dropdown-menu" role="menu">
+		<li component="category/no-matches" role="presentation" class="category hidden">
+			<a role="menu-item">[[search:no-matches]]</a>
+		</li>
+		<!-- BEGIN categories -->
+		<li role="presentation" class="category <!-- IF categories.disabledClass -->disabled<!-- ENDIF categories.disabledClass -->" data-cid="{categories.cid}" data-name="{categories.name}">
+			<a role="menu-item">{categories.level}<span component="category-markup"><!-- IF categories.icon --><span class="fa-stack" style="{function.generateCategoryBackground}"><i style="color: {categories.color};" class="fa fa-stack-1x fa-fw {categories.icon}"></i></span><!-- ENDIF categories.icon --> {categories.name}</span></a>
+		</li>
+		<!-- END categories -->
+	</ul>
+</div>
+			</div>
+
 			<hr />
+
 			<div class="privilege-table-container">
 				<!-- IF cid -->
 									<table class="table table-striped privilege-table">
@@ -28,10 +39,10 @@
 								<th class="arrowed" colspan="3">
 									[[admin/manage/categories:privileges.section-viewing]]
 								</th>
-								<th class="arrowed" colspan="8">
+								<th class="arrowed" colspan="9">
 									[[admin/manage/categories:privileges.section-posting]]
 								</th>
-								<th class="arrowed" colspan="2">
+								<th class="arrowed" colspan="3">
 									[[admin/manage/categories:privileges.section-moderation]]
 								</th>
 							</tr><tr><!-- zebrastripe reset --></tr>
@@ -84,10 +95,10 @@
 								<th class="arrowed" colspan="3">
 									[[admin/manage/categories:privileges.section-viewing]]
 								</th>
-								<th class="arrowed" colspan="8">
+								<th class="arrowed" colspan="9">
 									[[admin/manage/categories:privileges.section-posting]]
 								</th>
-								<th class="arrowed" colspan="2">
+								<th class="arrowed" colspan="3">
 									[[admin/manage/categories:privileges.section-moderation]]
 								</th>
 							</tr><tr><!-- zebrastripe reset --></tr>

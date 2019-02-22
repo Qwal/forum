@@ -1,2 +1,2 @@
-"use strict";define("admin/modules/colorpicker",function(){var n={};n.enable=function(n,i){(n instanceof jQuery?n:$(n)).each(function(){var e=$(this);e.ColorPicker({color:e.val()||"#000",onChange:function(n,o){e.val("#"+o);if(typeof i==="function"){i(n,o)}},onShow:function(n){$(n).css("z-index",1051)}})})};return n});
-//# sourceMappingURL=public/src/admin/modules/colorpicker.js.map
+"use strict";define("admin/modules/colorpicker",function(){var n={};n.enable=function(n,o){(n instanceof jQuery?n:$(n)).each(function(){var n=$(this);n.ColorPicker({color:n.val()||"#000",onChange:function(e,i){n.val("#"+i);if(typeof o==="function"){o(e,i)}},onShow:function(n){$(n).css("z-index",1051)}})})};return n});
+//# sourceMappingURL=colorpicker.js.map
